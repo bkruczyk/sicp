@@ -44,3 +44,13 @@
   dispatch)
 
 (define acc (make-account 100))
+
+;; excercise 3.1
+
+(define (make-accumulator n)
+  (lambda (x)
+    (begin
+      (set! n (+ n x))
+      n)))
+
+(define A (make-accumulator 5))
