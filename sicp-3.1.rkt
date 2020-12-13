@@ -54,3 +54,21 @@
       n)))
 
 (define A (make-accumulator 5))
+
+;; excercise 3.2
+
+(define (make-monitored f)
+  (define (make-monitored-with-count f n)
+    (lambda (x)
+      (cond ((eq? x 'how-many-calls?) n)
+            ((eq? x 'reset-counter)
+             (begin
+               (set! n (- n n))
+               n))
+            (else
+             (begin
+               (set! n (+ 1 n))
+               (f x))))))
+  (make-monitored-with-count f 0))
+
+(define s (make-monitored sqrt))
