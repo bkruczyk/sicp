@@ -27,23 +27,28 @@
 (define W1 (make-withdraw 100))
 (define W2 (make-withdraw 100))
 
-(define (make-account balance)
-  (define (withdraw amount)
-    (if (>= balance amount)
-        (begin (set! balance
-                     (- balance amount))
-               balance)
-        "Insufficient funds"))
-  (define (deposit amount)
-    (set! balance (+ balance amount))
-    balance)
-  (define (dispatch m)
-    (cond ((eq? m 'withdraw) withdraw)
-          ((eq? m 'deposit) deposit)
+(define (make-account balance secret)
+  (define (withdraw password amount)
+    (if (eq? password secret)
+        (if (>= balance amount)
+            (begin (set! balance
+                         (- balance amount))
+                   balance)
+            "Insufficient funds")
+        "Incorrect password"))
+  (define (deposit password amount)
+    (if (eq? password secret)
+        (begin
+          (set! balance (+ balance amount))
+          balance)
+        ("Incorrect password")))
+  (define (dispatch p m)
+    (cond ((eq? m 'withdraw) (lambda (x) (withdraw p x)))
+          ((eq? m 'deposit) (lambda (x) (deposit p x)))
           (else (error "Unknown request: MAKE-ACCOUNT" m))))
   dispatch)
 
-(define acc (make-account 100))
+(define acc (make-account 100 'secret-password))
 
 ;; excercise 3.1
 
