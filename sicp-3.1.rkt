@@ -28,25 +28,30 @@
 (define W2 (make-withdraw 100))
 
 (define (make-account balance secret)
-  (define (withdraw password amount)
-    (if (eq? password secret)
-        (if (>= balance amount)
-            (begin (set! balance
-                         (- balance amount))
-                   balance)
-            "Insufficient funds")
-        "Incorrect password"))
-  (define (deposit password amount)
-    (if (eq? password secret)
-        (begin
-          (set! balance (+ balance amount))
-          balance)
-        ("Incorrect password")))
-  (define (dispatch p m)
-    (cond ((eq? m 'withdraw) (lambda (x) (withdraw p x)))
-          ((eq? m 'deposit) (lambda (x) (deposit p x)))
-          (else (error "Unknown request: MAKE-ACCOUNT" m))))
-  dispatch)
+  (define (call-the-cops) "COPS CALLED!")
+  (let ((max-wrong-passwords 7)
+        (wrong-passwords-given 0))
+    (define (with-password-check password f . args)
+      (if (eq? password secret)
+          (apply f args)
+          (if (>= wrong-passwords-given max-wrong-passwords)
+              (call-the-cops)
+              (begin
+                (set! wrong-passwords-given (+ wrong-passwords-given 1))
+                "Incorrect password"))))
+    (define (withdraw amount)
+      (if (>= balance amount)
+          (begin (set! balance (- balance amount)) balance)
+          "Insufficient funds"))
+    (define (deposit amount)
+      (begin
+        (set! balance (+ balance amount))
+        balance))
+    (define (dispatch p m)
+      (cond ((eq? m 'withdraw) (lambda (x) (with-password-check p withdraw x)))
+            ((eq? m 'deposit) (lambda (x) (with-password-check deposit p x)))
+            (else (error "Unknown request: MAKE-ACCOUNT" m))))
+    dispatch))
 
 (define acc (make-account 100 'secret-password))
 
@@ -77,3 +82,9 @@
   (make-monitored-with-count f 0))
 
 (define s (make-monitored sqrt))
+
+;; excercise 3.3
+;; modification done above
+
+;; excercise 3.4
+;; modification done above
