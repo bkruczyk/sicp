@@ -1,5 +1,7 @@
 #lang sicp
 
+;;; 3.1.1 Local State Variables
+
 (define balance 100)
 (define (withdraw amount)
   (if (>= balance amount)
@@ -88,3 +90,50 @@
 
 ;; excercise 3.4
 ;; modification done above
+
+;;; 3.1.2 The Benefits of Introducing Assignment
+(define random-init 7901)
+
+;; https://en.wikipedia.org/wiki/Middle-square_method
+;; That's not very good method for random numbers, starting from 7901
+;; I've end ep in cycle very quickly 4100 -> 8100 -> 6100 -> 2100 -> 4100
+(define (middle-square x)
+  (define (pad-zeroes str n)
+    (if (= n (string-length str))
+        str
+        (pad-zeroes (string-append "0" str) n)))
+  (let ((str (pad-zeroes (number->string x) 8)))
+    (string->number (substring str 2 6))))
+
+;; https://en.wikipedia.org/wiki/Lehmer_random_number_generator#Parameters_in_common_use
+(define (minstd x)
+  (let ((m 2147483647)
+        (a 16807))
+    (modulo (* a x) m)))
+(define (rand-update x)
+  (set! x (minstd x))
+  x)
+
+(define rand
+  (let ((x random-init))
+    (lambda ()
+      (set! x (rand-update x))
+      x)))
+
+(define (estimate-pi trials)
+  (sqrt (/ 6 (monte-carlo trials cesaro-test))))
+
+(define (cesaro-test)
+  (= (gcd (rand) (rand)) 1))
+
+(define (monte-carlo trials experiment)
+  (define (iter trials-remaining trials-passed)
+    (cond ((= trials-remaining 0)
+           (/ trials-passed trials))
+          ((experiment)
+           (iter (- trials-remaining 1)
+                 (+ trials-passed 1)))
+          (else
+           (iter (- trials-remaining 1)
+                 trials-passed))))
+  (iter trials 0))
