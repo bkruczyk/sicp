@@ -137,3 +137,31 @@
            (iter (- trials-remaining 1)
                  trials-passed))))
   (iter trials 0))
+
+;; excercise 3.5
+
+(define (random-in-range low high)
+  (let ((range (- high low)))
+    (+ low (random range))))
+
+(define (point-in-integral P x1 x2 y1 y2)
+  (lambda () (P (random-in-range x1 x2)
+                (random-in-range y1 y2))))
+
+(define (estimate-integral P x1 x2 y1 y2 trials)
+  (monte-carlo
+   trials
+   (point-in-integral P x1 x2 y1 y2)))
+
+(define (in-unit-circle? x y)
+  (<= (+ (expt (- x 0.5) 2)
+         (expt (- y 0.5) 2))
+      (expt 0.5 2)))
+
+(define (estimate-integral-pi)
+  (let ((area
+         (estimate-integral
+          in-unit-circle?
+          0.0 1.0 0.0 1.0
+          100000.0)))
+    (/ area (* 0.5 0.5))))
