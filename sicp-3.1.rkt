@@ -114,11 +114,11 @@
   (set! x (minstd x))
   x)
 
-(define rand
-  (let ((x random-init))
-    (lambda ()
-      (set! x (rand-update x))
-      x)))
+;; (define rand
+;;   (let ((x random-init))
+;;     (lambda ()
+;;       (set! x (rand-update x))
+;;       x)))
 
 (define (estimate-pi trials)
   (sqrt (/ 6 (monte-carlo trials cesaro-test))))
@@ -165,3 +165,16 @@
           0.0 1.0 0.0 1.0
           100000.0)))
     (/ area (* 0.5 0.5))))
+
+;; excercise 3.6
+
+(define rand
+  (let ((x random-init))
+    (lambda (op)
+      (cond ((eq? op 'generate)
+             (begin
+               (set! x (rand-update x))
+               x))
+            ((eq? op 'reset)
+             (lambda (y)
+               (set! x y)))))))
