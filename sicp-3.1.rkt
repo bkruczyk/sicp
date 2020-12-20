@@ -31,10 +31,17 @@
 
 (define (make-account balance secret)
   (define (call-the-cops) "COPS CALLED!")
+  (define (contains? xs x)
+    (cond ((null? xs) false)
+          ((eq? (car xs) x) true)
+          (else (contains? (cdr xs) x))))
   (let ((max-wrong-passwords 7)
-        (wrong-passwords-given 0))
+        (wrong-passwords-given 0)
+        (passwords (list secret)))
+    (define (add-new-password new-password)
+      (set! passwords (cons new-password passwords)))
     (define (with-password-check password f . args)
-      (if (eq? password secret)
+      (if (contains? passwords secret)
           (apply f args)
           (if (>= wrong-passwords-given max-wrong-passwords)
               (call-the-cops)
@@ -51,7 +58,8 @@
         balance))
     (define (dispatch p m)
       (cond ((eq? m 'withdraw) (lambda (x) (with-password-check p withdraw x)))
-            ((eq? m 'deposit) (lambda (x) (with-password-check deposit p x)))
+            ((eq? m 'deposit) (lambda (x) (with-password-check p deposit x)))
+            ((eq? m 'add-new-password) (lambda (x) (with-password-check p add-new-password x)))
             (else (error "Unknown request: MAKE-ACCOUNT" m))))
     dispatch))
 
@@ -178,3 +186,11 @@
             ((eq? op 'reset)
              (lambda (y)
                (set! x y)))))))
+
+;; excercise 3.7
+(define (make-joint account password new-password)
+  ((account password 'add-new-password) new-password)
+  account)
+
+(define peter-acc (make-account 100 'foo))
+(define paul-acc (make-joint peter-acc 'foo 'bar))
