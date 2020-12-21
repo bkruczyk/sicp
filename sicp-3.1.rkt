@@ -175,7 +175,6 @@
     (/ area (* 0.5 0.5))))
 
 ;; excercise 3.6
-
 (define rand
   (let ((x random-init))
     (lambda (op)
@@ -188,9 +187,28 @@
                (set! x y)))))))
 
 ;; excercise 3.7
+;; modification to make-account done above
 (define (make-joint account password new-password)
   ((account password 'add-new-password) new-password)
   account)
 
 (define peter-acc (make-account 100 'foo))
 (define paul-acc (make-joint peter-acc 'foo 'bar))
+
+;; excercise 3.8
+(define f
+  (let ((y 1))
+    (lambda (x)
+      (set! y (* y x))
+      y)))
+
+;; when executed left-to-right will give 0 because we will
+;; first multiply y by 0 and we will multiply 1 * 0 in next
+;; evaluation
+;;
+;; right-to-left we will start with 1 * 1 and after that we
+;; will add 1 * 0 to it so it will give 1 as the sum
+
+;; (+ (f 0) (f 1))
+;;
+;;
