@@ -212,3 +212,341 @@
 ;; (+ (f 0) (f 1))
 ;;
 ;;
+
+;; excercise 3.9
+;; excercise 3.10
+;;
+;; pen and paper tasks
+;; http://community.schemewiki.org/?sicp-ex-3.10
+
+;; excercise 3.11
+;; acc state is kept in the first frame created (E0)
+;; different accounts have separate environments
+;; code for them can be shared
+;; http://community.schemewiki.org/?sicp-ex-3.11
+
+;; excercise 3.12
+
+(define (append x y)
+  (if (null? x)
+      y
+      (cons (car x) (append (cdr x) y))))
+
+(define (append! x y)
+  (set-cdr! (last-pair x) y)
+  x)
+
+(define (last-pair x)
+  (if (null? (cdr x))
+      x
+      (last-pair (cdr x))))
+
+;; (define x (list 'a 'b))
+;; (define y (list 'c 'd))
+;; (define z (append x y))
+
+;; (define w (append! x y))
+
+;; (cdr x)
+;;
+;; append! is modifying x by appending y, w is here just other name for x
+
+;; excercise 3.13
+
+(define (make-cycle x)
+  (set-cdr! (last-pair x) x)
+  x)
+;; (define z (make-cycle (list 'a 'b 'c)))
+
+;; make-cycle creates, indeed, a cycle so that the successor of 'c is 'a
+;; trying to compute last-pair on z will cause infinite loop
+
+;; excercise 3.14
+(define (mystery x)
+  (define (loop x y)
+    (if (null? x)
+        y
+        (let ((temp (cdr x)))
+          (set-cdr! x y)
+          (loop temp x))))
+  (loop x '()))
+
+(define v (list 'a 'b 'c 'd))
+(define w (mystery v))
+
+;; note for the SICP paragraph
+;; eq? is comparing using pointers, not values
+;; meaning comparing lists
+;; (define a '(1 2 3))
+;; (define b '(1 2 3))
+;; will yield false
+;; but when we compare symbols eg.
+;; (eq? 'a 'a)
+;; it will yield true since symbols are unique
+;; in Scheme meaning they share the same space
+;; and they have the same pointer
+
+;; excercise 3.15
+;; drawing excercise
+
+;; excercise 3.16
+
+(define (count-pairs x)
+  (if (not (pair? x))
+      0
+      (+ (count-pairs (car x))
+         (count-pairs (cdr x))
+         1)))
+
+;; would not return for any list containing a cycle eg.
+;; (define x '(a b c))
+;; (set-car! x x)
+;; (count-pairs x)
+
+;; would return 3 for simple three-element list
+;; (count-pairs '(a b c))
+
+;; would return 4 because it would count twice pair that contains b
+;;
+;; (define p3 (cons 'b nil))
+;; (define p2 (cons 'a nil))
+;; (define p1 (cons nil nil))
+;; (set-cdr! p2 p3)
+;; (set-car! p1 p2)
+;; (set-cdr! p1 p3)
+;; (count-pairs p1)
+;; => 4
+;;
+;; dont use display to check structure of p1!
+;; it does not show the refernces, it shows as if values were copied
+;;
+;; -> | * | * | ------ | b | / |
+;;      |                |
+;;      |                |
+;;    | a | * | --------/
+;;
+;; return 7, traversing to values a b once from car of first pair,
+;; and second pair while traversing from cdr
+;;
+;; -> | * | * |
+;;      |  /
+;;      | /
+;;    | * | * |
+;;      |  /
+;;      | /
+;;    | * | * |
+;;      |   |
+;;      a   b
+;;
+;; excercise 3.17
+(define (member? x xs)
+  (cond ((null? xs)
+         #f)
+        ((eq? x (car xs))
+         #t)
+        (else
+         (member? x (cdr xs)))))
+
+;; (define p3 (cons 'b nil))
+;; (define p2 (cons 'a nil))
+;; (define p1 (cons nil nil))
+;; (set-cdr! p2 p3)
+;; (set-car! p1 p2)
+;; (set-cdr! p1 p3)
+;; (count-pairs p1)
+
+(define (count-pairs-bis xs)
+  (define visited '())
+  (define (loop xs)
+    (if (not (pair? xs))
+        0
+        (let ((head (car xs))
+              (tail (cdr xs)))
+          (+ 1
+             (if (member? head visited)
+                 0
+                 (begin
+                   (set! visited (cons head visited))
+                   (loop head)))
+             (if (member? tail visited)
+                 0
+                 (begin
+                   (set! visited (cons tail visited))
+                   (loop tail)))))))
+  (loop xs))
+
+;; (count-pairs-bis p1)
+;; => 3
+
+;; excercise 3.18
+
+(define (has-cycle? xs)
+  (define visited '())
+  (define (loop xs)
+    (cond ((not (pair? xs))
+           #f)
+          ((member? (cdr xs) visited)
+           #t)
+          (else
+           (set! visited (cons (cdr xs) visited))
+           (loop (cdr xs)))))
+  (loop xs))
+
+;; excercise 3.19
+;; This one is not *clever* although it is constant space.
+;; Visited contains alwyas at most single element.
+;; But the time complexity is quadratic n^2.
+;;
+;; There are algorithms that use linear time, while using constant space,
+;; eg. Floyd's rabbit and haare algorithm
+;; https://en.wikipedia.org/wiki/Cycle_detection
+
+(define (has-cycle-cons-space? xs)
+  (define visited nil)
+  (define (seek xs)
+    (cond ((null? xs)
+           #f)
+          ((eq? (car xs) visited)
+           #t)
+          (else
+           (seek (cdr xs)))))
+  (define (loop xs)
+    (cond ((null? xs) #f)
+          (else
+           (set! visited (car xs))
+           (if (seek (cdr xs))
+               #t
+               (loop (cdr xs))))))
+  (loop xs))
+
+;; excercise 3.20
+;; environment box drawing excercise
+
+;; excercise 3.21
+;; Ben's examples are printing queue representation which
+;; is just a cons of front and rear pointers.
+;; While rear pointer is always cons of (value . nil),
+;; the front pointer is displayed as the list that starts
+;; where front pointer is pointing to.
+
+(define (front-ptr queue)
+  (car queue))
+(define (rear-ptr queue)
+  (cdr queue))
+(define (set-front-ptr! queue item)
+  (set-car! queue item))
+(define (set-rear-ptr! queue item)
+  (set-cdr! queue item))
+
+(define (empty-queue? queue)
+  (null? (front-ptr queue)))
+
+(define (make-queue) (cons '() '()))
+
+(define (front-queue queue)
+  (if (empty-queue? queue)
+      (error "FRONT called with and empty queue" queue)
+      (car (front-ptr queue))))
+
+(define (insert-queue! queue item)
+  (let ((new-pair (cons item '())))
+    (cond ((empty-queue? queue)
+           (set-front-ptr! queue new-pair)
+           (set-rear-ptr! queue new-pair)
+           queue)
+          (else (set-cdr! (rear-ptr queue)
+                          new-pair)
+                (set-rear-ptr! queue new-pair)
+                queue))))
+
+(define (delete-queue! queue)
+  (cond ((empty-queue? queue)
+         (error "DELETE! called with an empty queue"))
+        (else (set-front-ptr!
+               queue
+               (cdr (front-ptr queue)))
+              queue)))
+
+(define (print-queue queue)
+  (display (front-ptr queue)))
+
+;; excercise 3.22
+(define (make-queue!)
+  (let ((front-ptr nil)
+        (rear-ptr nil))
+    (define (empty-queue?)
+      (null? front-ptr))
+    (define (insert! x)
+      (cond ((empty-queue?)
+             (let ((cell (cons x nil)))
+               (set! front-ptr cell)
+               (set! rear-ptr cell)))
+            (else
+             (set-cdr! rear-ptr (cons x nil))
+             (set! rear-ptr (cdr rear-ptr)))))
+    (define (delete!)
+      (if (empty-queue?)
+          (error "DELETE! From empty queue")
+          (set! front-ptr (cdr front-ptr))))
+    (define (dispatch m)
+      (cond ((eq? m 'insert) (lambda (x) (insert! x)))
+            ((eq? m 'delete) (delete!))
+            ((eq? m 'print) (display front-ptr))
+            (else
+             (error "DISPATCH! Operation not supported" m))))
+    dispatch))
+
+;; excercise 3.22
+(define (make-dequeue)
+  (cons '() '(nil nil)))
+
+(define (empty-dequeue? dequeue)
+  (null? (car dequeue)))
+
+(define (front-insert-dequeue! dequeue x)
+  (let ((new-pair (cons x (car dequeue))))
+    (cond ((empty-dequeue? dequeue)
+           (set-car! dequeue new-pair)
+           (set-cdr! dequeue (list new-pair)))
+          (else
+           (set-car! dequeue new-pair)))))
+
+(define (rear-insert-dequeue! dequeue x)
+  (let ((new-pair (cons x nil)))
+    (cond ((empty-dequeue? dequeue)
+           (set-car! dequeue new-pair)
+           (set-cdr! dequeue (list new-pair)))
+          (else
+             ;; (cdr dequeue) -- rear ptr
+             ;; (car (cdr dequeue)) -- last pair
+             ;; (cdr (cdr dequeue)) -- previous pair
+           (set-cdr! (car (cdr dequeue)) new-pair)
+           (set-cdr! dequeue (cons new-pair (cdr dequeue)))))))
+
+(define (front-delete-dequeue! dequeue)
+  (if (null? (car dequeue))
+      (error "DELETE FRONT! Empty dequeue")
+      (set-car! dequeue (cdr (car dequeue)))))
+(define (rear-delete-dequeue! dequeue)
+  (cond ((empty-dequeue? dequeue)
+         (error "DELETE REAR! Empty dequeue"))
+        ((null? (cdr (cdr dequeue)))
+         (set-car! dequeue nil)
+         (set-cdr! dequeue (cons nil nil)))
+        (else
+         (set-cdr! dequeue (cdr (cdr dequeue)))
+         (set-cdr! (car (cdr dequeue)) nil))))
+
+(define d (make-dequeue))
+(front-insert-dequeue! d 'x)
+(front-insert-dequeue! d 'y)
+(rear-insert-dequeue! d 'a)
+(rear-insert-dequeue! d 'b)
+(display d)
+(newline)
+(front-delete-dequeue! d)
+(display d)
+(newline)
+(rear-delete-dequeue! d)
+(display d)
+(newline)
