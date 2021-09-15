@@ -520,8 +520,10 @@
              ;; (cdr dequeue) -- rear ptr
              ;; (car (cdr dequeue)) -- last pair
              ;; (cdr (cdr dequeue)) -- previous pair
-           (set-cdr! (car (cdr dequeue)) new-pair)
-           (set-cdr! dequeue (cons new-pair (cdr dequeue)))))))
+           (let ((rear-ptr (cdr dequeue))
+                 (last-pair (car (cdr dequeue))))
+             (set-cdr! last-pair new-pair)
+             (set-cdr! dequeue (cons new-pair rear-ptr)))))))
 
 (define (front-delete-dequeue! dequeue)
   (if (null? (car dequeue))
@@ -537,16 +539,201 @@
          (set-cdr! dequeue (cdr (cdr dequeue)))
          (set-cdr! (car (cdr dequeue)) nil))))
 
-(define d (make-dequeue))
-(front-insert-dequeue! d 'x)
-(front-insert-dequeue! d 'y)
-(rear-insert-dequeue! d 'a)
-(rear-insert-dequeue! d 'b)
-(display d)
-(newline)
-(front-delete-dequeue! d)
-(display d)
-(newline)
-(rear-delete-dequeue! d)
-(display d)
-(newline)
+;; (define d (make-dequeue))
+;; (front-insert-dequeue! d 'x)
+;; (front-insert-dequeue! d 'y)
+;; (rear-insert-dequeue! d 'a)
+;; (rear-insert-dequeue! d 'b)
+;; (rear-insert-dequeue! d 'c)
+;; (display d)
+;; (newline)
+;; (rear-delete-dequeue! d)
+;; (display d)
+;; (newline)
+;; (rear-delete-dequeue! d)
+;; (display d)
+;; (newline)
+;; (rear-delete-dequeue! d)
+;; (display d)
+;; (newline)
+;;
+;; -- end of excercise 3.23
+
+;; (define (lookup key table)
+;;   (let ((record (assoc key (cdr table))))
+;;     (if record
+;;         (cdr record)
+;;         false)))
+
+;; (define (assoc key records)
+;;   (cond ((null? records) false)
+;;         ((equal? key (car (car records)))
+;;          (car records))
+;;         (else (assoc key (cdr records)))))
+
+;; (define (insert! key value table)
+;;   (let ((record (assoc key (cdr table))))
+;;     (if record
+;;         (set-cdr! record value)
+;;         (set-cdr! table (cons (cons key value)
+;;                               (cdr table)))))
+;;   'ok)
+
+;; (define (make-table)
+;;   (list '*table*))
+
+;; (define (lookup key-1 key-2 table)
+;;   (let ((subtable (assoc key-1 (cdr table))))
+;;     (if subtable
+;;         (let ((record (assoc key-2 (cdr subtable))))
+;;           (if record
+;;               (cdr record)
+;;               false)))))
+
+;; (define (insert! key-1 key-2 value table)
+;;   (let ((subtable (assoc key-1 (cdr table))))
+;;     (if subtable
+;;         (let ((record
+;;                (assoc key-2 (cdr subtable))))
+;;           (if record
+;;               (set-cdr! record value)
+;;               (set-cdr!
+;;                subtable
+;;                (cons (cons key-2 value)
+;;                      (cdr subtable)))))
+;;         (set-cdr!
+;;          table
+;;          (cons (list key-1 (cons key-2 value))
+;;                (cdr table)))))
+;;   'ok)
+
+;; excercise 3.24
+
+;; (define (make-table)
+;;   (let ((local-table (list '*table*)))
+;;     (define (lookup key-1 key-2)
+;;       (let ((subtable (assoc key-1 (cdr local-table))))
+;;         (if subtable
+;;             (let ((record (assoc key-2 (cdr subtable))))
+;;               (if record
+;;                   (cdr record)
+;;                   false))
+;;             false)))
+;;     (define (insert! key-1 key-2 value)
+;;       (let ((subtable (assoc key-1 (cdr local-table))))
+;;         (if subtable
+;;             (let ((record (assoc key-2 (cdr subtable))))
+;;               (if record
+;;                   (set-cdr! record value)
+;;                   (set-cdr! subtable (cons (cons key-2 value) (cdr subtable)))))
+;;             (set-cdr! local-table
+;;                       (cons (list key-1 (cons key-2 value))
+;;                             (cdr local-table)))))
+;;       'ok)
+;;     (define (dispatch m)
+;;       (cond ((eq? m 'lookup-proc) lookup)
+;;             ((eq? m 'insert-proc!) insert!)
+;;             (else (error "Unknown operation: TABLE" m))))
+;;     dispatch))
+
+;; (define operation-table (make-table))
+;; (define get (operation-table 'lookup-proc))
+;; (define put (operation-table 'insert-proc!))
+
+;; (define (make-table same-key?)
+;;   (let ((local-table (list '*table*)))
+;;     (define (assoc key records)
+;;       (cond ((null? records) false)
+;;             ((same-key? key (car (car records)))
+;;              (car records))
+;;             (else (assoc key (cdr records)))))
+;;     (define (lookup key-1 key-2)
+;;       (let ((subtable (assoc key-1 (cdr local-table))))
+;;         (if subtable
+;;             (let ((record (assoc key-2 (cdr subtable))))
+;;               (if record
+;;                   (cdr record)
+;;                   false))
+;;             false)))
+;;     (define (insert! key-1 key-2 value)
+;;       (let ((subtable (assoc key-1 (cdr local-table))))
+;;         (if subtable
+;;             (let ((record (assoc key-2 (cdr subtable))))
+;;               (if record
+;;                   (set-cdr! record value)
+;;                   (set-cdr! subtable (cons (cons key-2 value) (cdr subtable)))))
+;;             (set-cdr! local-table
+;;                       (cons (list key-1 (cons key-2 value))
+;;                             (cdr local-table)))))
+;;       'ok)
+;;     (define (dispatch m)
+;;       (cond ((eq? m 'lookup-proc) lookup)
+;;             ((eq? m 'insert-proc!) insert!)
+;;             (else (error "Unknown operation: TABLE" m))))
+;;     dispatch))
+
+;; (define operation-table (make-table))
+;; (define get (operation-table 'lookup-proc))
+;; (define put (operation-table 'insert-proc!))
+
+;; excercise 3.25
+;; TODO
+(define (make-table)
+  (define (assoc key records)
+    (display "assoc: key=")
+    (display key)
+    (display ", records=")
+    (display records)
+    (newline)
+    (cond ((null? records) false)
+          ((equal? key (car (car records)))
+           (car records))
+          (else (assoc key (cdr records)))))
+  (let ((local-table (list '*table*)))
+    (define (lookup keys subtable)
+      (display "lookup: keys=")
+      (display keys)
+      (display ", subtable=")
+      (display subtable)
+      (newline)
+      (cond ((null? subtable) false)
+            ((null? keys) false)
+            ((null? (cdr keys))
+             (display "Looking up for record...")
+             (newline)
+             (let ((record (assoc (car keys) (cdr subtable))))
+               (display "(car keys): ")
+               (display (car keys))
+               (newline)
+               (display "(cdr subtable): ")
+               (display (cdr subtable))
+               (newline)
+               (display "record: ")
+               (display record)
+               (newline)
+               (if record
+                   (cdr record)
+                   false)))
+            (else
+             (lookup (cdr keys) (cdr subtable)))))
+    (define (insert! keys subtable value)
+      (cond ((null? (cdr keys))
+             (let ((record (assoc (car keys) (cdr subtable))))
+               (if record
+                   (set-cdr! record value)
+                   (set-cdr! subtable (cons (cons (car keys) value) (cdr subtable))))))
+            ((null? (cdr subtable))
+             (set-cdr! subtable (cons (cons (car keys) nil) nil))
+             (insert! (cdr keys) (cdr subtable) value))
+            (else
+             (insert! (cdr keys) (cdr subtable) value)))
+      'ok)
+    (define (dispatch m)
+      (cond ((eq? m 'lookup-proc) (lambda (keys) (lookup keys local-table)))
+            ((eq? m 'insert-proc!) (lambda (keys value) (insert! keys local-table value)))
+            (else (error "Unknown operation: TABLE" m))))
+    dispatch))
+
+(define operation-table (make-table))
+(define get (operation-table 'lookup-proc))
+(define put (operation-table 'insert-proc!))
