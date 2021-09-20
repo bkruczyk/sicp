@@ -559,28 +559,28 @@
 ;;
 ;; -- end of excercise 3.23
 
-;; (define (lookup key table)
-;;   (let ((record (assoc key (cdr table))))
-;;     (if record
-;;         (cdr record)
-;;         false)))
+(define (lookup key table)
+  (let ((record (assoc key (cdr table))))
+    (if record
+        (cdr record)
+        false)))
 
-;; (define (assoc key records)
-;;   (cond ((null? records) false)
-;;         ((equal? key (car (car records)))
-;;          (car records))
-;;         (else (assoc key (cdr records)))))
+(define (assoc key records)
+  (cond ((null? records) false)
+        ((equal? key (car (car records)))
+         (car records))
+        (else (assoc key (cdr records)))))
 
-;; (define (insert! key value table)
-;;   (let ((record (assoc key (cdr table))))
-;;     (if record
-;;         (set-cdr! record value)
-;;         (set-cdr! table (cons (cons key value)
-;;                               (cdr table)))))
-;;   'ok)
+(define (insert! key value table)
+  (let ((record (assoc key (cdr table))))
+    (if record
+        (set-cdr! record value)
+        (set-cdr! table (cons (cons key value)
+                              (cdr table)))))
+  'ok)
 
-;; (define (make-table)
-;;   (list '*table*))
+(define (make-table)
+  (list '*table*))
 
 ;; (define (lookup key-1 key-2 table)
 ;;   (let ((subtable (assoc key-1 (cdr table))))
@@ -677,63 +677,310 @@
 ;; (define put (operation-table 'insert-proc!))
 
 ;; excercise 3.25
-;; TODO
-(define (make-table)
-  (define (assoc key records)
-    (display "assoc: key=")
-    (display key)
-    (display ", records=")
-    (display records)
-    (newline)
-    (cond ((null? records) false)
-          ((equal? key (car (car records)))
-           (car records))
-          (else (assoc key (cdr records)))))
-  (let ((local-table (list '*table*)))
-    (define (lookup keys subtable)
-      (display "lookup: keys=")
-      (display keys)
-      (display ", subtable=")
-      (display subtable)
-      (newline)
-      (cond ((null? subtable) false)
-            ((null? keys) false)
-            ((null? (cdr keys))
-             (display "Looking up for record...")
-             (newline)
-             (let ((record (assoc (car keys) (cdr subtable))))
-               (display "(car keys): ")
-               (display (car keys))
-               (newline)
-               (display "(cdr subtable): ")
-               (display (cdr subtable))
-               (newline)
-               (display "record: ")
-               (display record)
-               (newline)
-               (if record
-                   (cdr record)
-                   false)))
-            (else
-             (lookup (cdr keys) (cdr subtable)))))
-    (define (insert! keys subtable value)
-      (cond ((null? (cdr keys))
-             (let ((record (assoc (car keys) (cdr subtable))))
-               (if record
-                   (set-cdr! record value)
-                   (set-cdr! subtable (cons (cons (car keys) value) (cdr subtable))))))
-            ((null? (cdr subtable))
-             (set-cdr! subtable (cons (cons (car keys) nil) nil))
-             (insert! (cdr keys) (cdr subtable) value))
-            (else
-             (insert! (cdr keys) (cdr subtable) value)))
-      'ok)
-    (define (dispatch m)
-      (cond ((eq? m 'lookup-proc) (lambda (keys) (lookup keys local-table)))
-            ((eq? m 'insert-proc!) (lambda (keys value) (insert! keys local-table value)))
-            (else (error "Unknown operation: TABLE" m))))
-    dispatch))
+;; (define (make-table)
+;;   (define (assoc key records)
+;;     (display "assoc: key=")
+;;     (display key)
+;;     (display ", records=")
+;;     (display records)
+;;     (newline)
+;;     (cond ((null? records) false)
+;;           ((equal? key (car (car records)))
+;;            (car records))
+;;           (else (assoc key (cdr records)))))
+;;   (let ((local-table (list '*table*)))
+;;     (define (lookup keys subtable)
+;;       (display "lookup: keys=")
+;;       (display keys)
+;;       (display ", subtable=")
+;;       (display subtable)
+;;       (newline)
+;;       (cond ((null? subtable) false)
+;;             ((null? keys) false)
+;;             ((null? (cdr keys))
+;;              (display "Looking up for record...")
+;;              (newline)
+;;              (let ((record (assoc (car keys) (cdr subtable))))
+;;                (display "(car keys): ")
+;;                (display (car keys))
+;;                (newline)
+;;                (display "(cdr subtable): ")
+;;                (display (cdr subtable))
+;;                (newline)
+;;                (display "record: ")
+;;                (display record)
+;;                (newline)
+;;                (if record
+;;                    (cdr record)
+;;                    false)))
+;;             (else
+;;              (lookup (cdr keys) (cdr subtable)))))
+;;     (define (insert! keys subtable value)
+;;       (cond ((null? (cdr keys))
+;;              (let ((record (assoc (car keys) (cdr subtable))))
+;;                (if record
+;;                    (set-cdr! record value)
+;;                    (set-cdr! subtable (cons (cons (car keys) value) (cdr subtable))))))
+;;             ((null? (cdr subtable))
+;;              (set-cdr! subtable (cons (cons (car keys) nil) nil))
+;;              (insert! (cdr keys) (cdr subtable) value))
+;;             (else
+;;              (insert! (cdr keys) (cdr subtable) value)))
+;;       'ok)
+;;     (define (dispatch m)
+;;       (cond ((eq? m 'lookup-proc) (lambda (keys) (lookup keys local-table)))
+;;             ((eq? m 'insert-proc!) (lambda (keys value) (insert! keys local-table value)))
+;;             (else (error "Unknown operation: TABLE" m))))
+;;     dispatch))
 
-(define operation-table (make-table))
-(define get (operation-table 'lookup-proc))
-(define put (operation-table 'insert-proc!))
+;; (define operation-table (make-table))
+;; (define get (operation-table 'lookup-proc))
+;; (define put (operation-table 'insert-proc!))
+
+;; excercise 3.26
+;; It could be done using binary tree so that when new keys are inserted
+;; the binary tree gets rebuilt.
+;
+;; Alternatively we can keep current implementation but at the same time
+;; maintain additional index structure which would be rebuilt on inserting
+;; new keys.
+
+;; excercise 3.27
+
+;; memo-fib is linear because it computes given n once, for the n elements it
+;; has to do n times summation, which we assume is O(1) and 2n table accesses;
+;; we can assume table access is O(1) since last computed values are added to
+;; the top of the list so accessing them does not require going through whole
+;; precomputed value list
+;;
+;; note:
+;; in global environment thing that will be bound to 'memo-fib' is the lamda
+;; returned by memoize, so after calling memo-fib again it will execute memoized
+;; version, and will not create again local-table
+
+(define (memoize f)
+  (let ((table (make-table)))
+    (lambda (x)
+      (let ((previously-computed-result
+             (lookup x table)))
+        (or previously-computed-result
+            (let ((result (f x)))
+              (insert! x result table)
+              result))))))
+
+(define memo-fib
+  (memoize
+   (lambda (n)
+     (cond ((= n 0) 0)
+           ((= n 1) 1)
+           (else
+            (display "Computing n=")
+            (display n)
+            (newline)
+            (+ (memo-fib (- n 1))
+               (memo-fib (- n 2))))))))
+
+;; TODO Do the excercises from the section about simulating digital circuits.
+
+;; 3.3.5 Propagation of Constraints
+
+(define (adder a1 a2 sum)
+  (define (process-new-value)
+    (cond ((and (has-value? a1)
+                (has-value? a2))
+           (set-value! sum
+                       (+ (get-value a1)
+                          (get-value a2))
+                       me))
+          ((and (has-value? a1)
+                (has-value? sum))
+           (set-value! a2
+                       (- (get-value sum)
+                          (get-value a1))
+                       me))
+          ((and (has-value? a2)
+                (has-value? sum))
+           (set-value! a1
+                       (- (get-value sum)
+                          (get-value a2))
+                       me))))
+  (define (process-forget-value)
+    (forget-value! sum me)
+    (forget-value! a1 me)
+    (forget-value! a2 me))
+  (define (me request)
+    (cond ((eq? request 'I-have-a-value)
+           (process-new-value))
+          ((eq? request 'I-lost-my-value)
+           (process-forget-value))
+          (else (error "Uknown request: ADDER" request))))
+  (connect a1 me)
+  (connect a2 me)
+  (connect sum me)
+  me)
+
+(define (inform-about-value constraint)
+  (constraint 'I-have-a-value))
+(define (inform-about-no-value constraint)
+  (constraint 'I-lost-my-value))
+
+(define (multiplier m1 m2 product)
+  (define (process-new-value)
+    (cond ((or (and (has-value? m1)
+                    (= (get-value m1) 0))
+               (and (has-value? m2)
+                    (= (get-value m2) 0)))
+           (set-value! product 0 me))
+          ((and (has-value? m1)
+                (has-value? m2))
+           (set-value! product
+                       (* (get-value m1)
+                          (get-value m2))
+                       me))
+          ((and (has-value? product)
+                (has-value? m1))
+           (set-value! m2
+                       (/ (get-value product)
+                          (get-value m1))
+                       me))
+          ((and (has-value? product)
+                (has-value? m2))
+           (set-value! m1
+                       (/ (get-value product)
+                          (get-value m2))
+                       me))))
+  (define (process-forget-value)
+    (forget-value! product me)
+    (forget-value! m1 me)
+    (forget-value! m2 me)
+    (process-new-value))
+  (define (me request)
+    (cond ((eq? request 'I-have-a-value)
+           (process-new-value))
+          ((eq? request 'I-lost-my-value)
+           (process-forget-value))
+          (else
+           (error "Unknown request: MULTIPLIER" request))))
+  (connect m1 me)
+  (connect m2 me)
+  (connect product me)
+  me)
+
+(define (constant value connector)
+  (define (me request)
+    (error "Unknown request: CONSTANT" request))
+  (connect connector me)
+  (set-value! connector value me)
+  me)
+
+(define (probe name connector)
+  (define (print-probe value)
+    (newline) (display "Probe: ")
+    (display name) (display " = ")
+    (display value))
+  (define (process-new-value)
+    (print-probe (get-value connector)))
+  (define (process-forget-value)
+    (print-probe "?"))
+  (define (me request)
+    (cond ((eq? request 'I-have-a-value)
+           (process-new-value))
+          ((eq? request 'I-lost-my-value)
+           (process-forget-value))
+          (else (error "Unknow request: PROBE" request))))
+  (connect connector me)
+  me)
+
+(define (make-connector)
+  (let ((value false)
+        (informant false)
+        (constraints '()))
+    (define (set-my-value newval setter)
+      (cond ((not (has-value? me))
+             (set! value newval)
+             (set! informant setter)
+             (for-each-except
+              setter
+              inform-about-value
+              constraints))
+            ((not (= value newval)
+                  (error "Contradiction"
+                         (list value newval))))
+            (else 'ignored)))
+    (define (forget-my-value retractor)
+      (if (eq? retractor informant)
+          (begin (set! informant false)
+                 (for-each-except
+                  retractor
+                  inform-about-no-value
+                  constraints))
+          'ignored))
+    (define (connect new-constraint)
+      (if (not (memq new-constraint
+                     constraints))
+          (set! constraints
+                (cons new-constraint
+                      constraints)))
+      (if (has-value? me)
+          (inform-about-value new-constraint))
+      'done)
+    (define (me request)
+      (cond ((eq? request 'has-value?)
+             (if informant true false))
+            ((eq? request 'value) value)
+            ((eq? request 'set-value!)
+             set-my-value)
+            ((eq? request 'forget)
+             forget-my-value)
+            ((eq? request 'connect) connect)
+            (else (error "Uknown operation: CONNECTOR" request))))
+    me))
+
+(define (for-each-except exception
+                         procedure
+                         list)
+  (define (loop items)
+    (cond ((null? items) 'done)
+          ((eq? (car items) exception)
+           (loop (cdr items)))
+          (else (procedure (car items))
+                (loop (cdr items)))))
+  (loop list))
+
+(define (has-value? connector)
+  (connector 'has-value?))
+(define (get-value connector)
+  (connector 'value))
+(define (set-value! connector
+                    new-value
+                    informant)
+  ((connector 'set-value!)
+   new-value
+   informant))
+(define (forget-value! connector retractor)
+  ((connector 'forget) retractor))
+(define (connect connector new-constraint)
+  ((connector 'connect) new-constraint))
+
+(define (celsius-fahrenheit-converter c f)
+  (let ((u (make-connector))
+        (v (make-connector))
+        (w (make-connector))
+        (x (make-connector))
+        (y (make-connector)))
+    (multiplier c w u)
+    (multiplier v x u)
+    (adder v y f)
+    (constant 9 w)
+    (constant 5 x)
+    (constant 32 y)
+    'ok))
+
+(define C (make-connector))
+(define F (make-connector))
+(celsius-fahrenheit-converter C F)
+
+(probe "Celsius temp" C)
+(probe "Fahrenheit temp" F)
+
+(set-value! F 212 'user)
