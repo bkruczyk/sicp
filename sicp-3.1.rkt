@@ -73,7 +73,7 @@
       (set! n (+ n x))
       n)))
 
-(define A (make-accumulator 5))
+;; (define A (make-accumulator 5))
 
 ;; excercise 3.2
 
@@ -962,25 +962,158 @@
 (define (connect connector new-constraint)
   ((connector 'connect) new-constraint))
 
-(define (celsius-fahrenheit-converter c f)
-  (let ((u (make-connector))
-        (v (make-connector))
-        (w (make-connector))
-        (x (make-connector))
-        (y (make-connector)))
-    (multiplier c w u)
-    (multiplier v x u)
-    (adder v y f)
-    (constant 9 w)
-    (constant 5 x)
-    (constant 32 y)
-    'ok))
+;; (define (celsius-fahrenheit-converter c f)
+;;   (let ((u (make-connector))
+;;         (v (make-connector))
+;;         (w (make-connector))
+;;         (x (make-connector))
+;;         (y (make-connector)))
+;;     (multiplier c w u)
+;;     (multiplier v x u)
+;;     (adder v y f)
+;;     (constant 9 w)
+;;     (constant 5 x)
+;;     (constant 32 y)
+;;     'ok))
 
-(define C (make-connector))
-(define F (make-connector))
-(celsius-fahrenheit-converter C F)
+;; (define C (make-connector))
+;; (define F (make-connector))
+;; (celsius-fahrenheit-converter C F)
 
-(probe "Celsius temp" C)
-(probe "Fahrenheit temp" F)
+;; (probe "Celsius temp" C)
+;; (probe "Fahrenheit temp" F)
 
-(set-value! F 212 'user)
+;; (set-value! F 212 'user)
+;; (forget-value! F 'user)
+;; (forget-value! C 'user)
+;; (set-value! C 100 'user)
+
+;; excercise 3.33
+(define (averager a b c)
+  (define (process-new-value)
+    (cond ((and (has-value? a)
+                (has-value? b))
+           (set-value! c
+                       (* 1.0 (/ (+ (get-value a) (get-value b)) 2))
+                       me))
+          ((and (has-value? a)
+                (has-value? c))
+           (set-value! b
+                       (- (* 2 (get-value c)) (get-value a))
+                       me))
+          ((and (has-value? b)
+                (has-value? c))
+           (set-value! a
+                       (- (* 2 (get-value c)) (get-value b))
+                       me))))
+  (define (process-forget-value)
+    (forget-value! a me)
+    (forget-value! b me)
+    (forget-value! c me))
+  (define (me request)
+    (cond ((eq? request 'I-have-a-value)
+           (process-new-value))
+          ((eq? request 'I-lost-my-value)
+           (process-forget-value))
+          (else (error "Uknown request: AVERAGER" request))))
+  (connect a me)
+  (connect b me)
+  (connect c me)
+  me)
+
+
+;; (define X (make-connector))
+;; (define Y (make-connector))
+;; (define Z (make-connector))
+
+;; (define averager-constrained (averager X Y Z))
+
+;; (probe "Average" Z)
+;; (set-value! X 2 'user)
+;; (set-value! Y 3 'user)
+
+;; excercise 3.34
+;; squarer can't figure out the value of a if only b is set
+;; this could be done if separate squarer contstraint would-be-future
+;; be written that when b is given then it does sqrt
+;; (define (squarer a b) (multiplier a a b))
+;; (define A (make-connector))
+;; (define B (make-connector))
+
+;; (squarer A B)
+;; (probe "Square" B)
+;; (probe "A" A)
+;; (set-value! B 4 'user)
+
+;; excercise 3.35
+
+(define (squarer a b)
+  (define (process-new-value)
+    (if (has-value? b)
+        (if (< (get-value b) 0)
+            (error "square less than 0: SQUARER"
+                   (get-value b))
+            (set-value! a (sqrt (get-value b)) me))
+        (if (has-value? a)
+            (set-value! b (* (get-value a) (get-value a)) me))))
+  (define (process-forget-value)
+    (forget-value! a me)
+    (forget-value! b me))
+  (define (me request)
+    (cond ((eq? request 'I-have-a-value)
+           (process-new-value))
+          ((eq? request 'I-lost-my-value)
+           (process-forget-value))
+          (else (error "Unknown request: SQUARER" request))))
+  (connect a me)
+  (connect b me)
+  me)
+
+(define A (make-connector))
+(define B (make-connector))
+
+(squarer A B)
+;; (probe "Base" A)
+;; (set-value! B 9 'user)
+;; (probe "Square" B)
+;; (set-value! A 2 'user)
+
+;; excercise 3.36
+;; TODO: Draw environment diagram
+
+;; excercise 3.37
+(define (c+ x y)
+   (let ((z (make-connector)))
+     (adder x y z)
+     z))
+
+ (define (c- x y)
+   (let ((z (make-connector)))
+     (adder z y x)
+     z))
+
+ (define (c* x y)
+   (let ((z (make-connector)))
+     (multiplier x y z)
+     z))
+
+ (define (c/ x y)
+   (let ((z (make-connector)))
+     (multiplier z y x)
+     z))
+
+ (define (cv x)
+   (let ((z (make-connector)))
+     (constant x z)
+     z))
+
+ (define (celsius-fahrenheit-converter x)
+   (c+ (c* (c/ (cv 9) (cv 5))
+           x)
+       (cv 32)))
+;; (define C (make-connector))
+;; (define F (make-connector))
+;; (celsius-fahrenheit-converter C F)
+
+;; (probe "Celsius temp" C)
+;; (probe "Fahrenheit temp" F)
