@@ -1117,3 +1117,1048 @@
 
 ;; (probe "Celsius temp" C)
 ;; (probe "Fahrenheit temp" F)
+
+;; excercise 3.38
+;; 1)
+;;
+;; i)
+;; 100 -> +10   = 110
+;; 110 -> -20   = 90
+;; 90  -> -HALF = 45
+;;
+;; ii)
+;; 100 -> +10   = 110
+;; 110 -> -HALF = 55
+;; 55  -> -20   = 35
+;;
+;; iii)
+;; 100 -> -20   = 80
+;; 80  -> +10   = 90
+;; 90  -> -HALF = 45
+;;
+;; iv)
+;; 100 -> -20   = 80
+;; 80  -> -HALF = 40
+;; 40  -> +10   = 50
+;;
+;; v)
+;; 100 -> -HALF = 50
+;; 50  -> +10   = 60
+;; 60  -> -20   = 40
+;;
+;; vi)
+;; 100 -> HALF = 50
+;; 50  -> -20  = 30
+;; 30  -> +10  = 40
+;;
+;; 2)
+;;
+;;  Peter               Paul                Mary                Bank
+;;
+;;  access:    100      access:     100     access:    100      100
+;;  new value: 110      new value:  80      new value: 50
+;;  set! 110                                                    110
+;;                      set! 80                                 80
+;;                                          set! 50             50
+;;
+;;  Peter               Paul                Mary                Bank
+;;
+;;  access:    100      access:     100                         100
+;;  new value: 110      new value:  80
+;;  set! 110                                access: 110         110
+;;                      set! 80             new value: 55       80
+;;                                          set!                55
+;;
+;;  Peter               Paul                Mary                Bank
+;;
+;;  access:    100      access:     100                         100
+;;  new value: 110      new value:  80
+;;  set! 110                                                    110
+;;                      set! 80             access: 80          80
+;;                                          new value: 40
+;;                                          set! 40             40
+;;
+;; etc.
+
+;; excercise 3.39
+;;
+;; What serialization in Scheme means exactly? Depending on what
+;; does it mean for a function to be serialized:
+;;
+;; 1) Serialized function can not be interleaved with other functions
+;;
+;; Posisible answers are exactly the same as if both P1 and P2 were seriazlized.
+;; So either P1 starts first and completes, then P2 starts first and completes,
+;; or P2 starts first and completes, then P1 starts first and completes.
+;;
+;; 2) Serialized functions that use the same serializer must run one after
+;; another. If one function is using the serializer, but the other one does not,
+;; then the result is the same as if both P1 and P2 weren't serialized.
+;;
+;; 3) Serialized function can not be affected y the value wrtite from other
+;; function. Then still P1 can be interleaved by P2 and still all answers are
+;; possible, as either
+;;
+;; - P1 runs and completes, then P2 runs and completes
+;;
+;; - P2 runs and completes, then P1 runs and completes
+;;
+;; - P1 starts running, read the initial value of x, the P2 starts and compltes,
+;; then P1 writes its value
+;;
+;; - P2 starts running, P1 runs and completes, P2 completes
+;;
+;; - P1 starts running, read initial value of x, read first value of x in
+;; multiplication, then P2 runs and completes, P1 reads second value of x in
+;; multiplication, P2 completes
+;;
+;; NOTE: After reading the rest of the chapter it seems serialization is
+;; basically making sure that functions that are using the same serializer in
+;; one after another fashion. That would be that the case described in 2) is
+;; true.
+;;
+;; excercise 3.40
+;;
+;; (define x 10)
+;; (parallel-execute
+;;  (lambda () (set! x (* x x)))
+;;  (lambda () (set! x (* x x x)))
+;;
+;; 1)
+;;
+;; P1 10 * 10 = 100
+;; P1 set! 100
+;; P2 100 * 100 * 100 = 1_000_000
+;; P2 set! 1_000_000
+;;
+;; 2)
+;;
+;; P2 10 * 10 * 10 = 1_000
+;; P2 set! 1_000
+;; P1 100 * 100 = 10_000
+;; P1 set! 10_000
+;;
+;; 2b)
+;;
+;; P1 10
+;; P2 10 * 10 * 10 = 1_000
+;; P2 set! 1_000
+;; P1 10 * 1000 = 10_000
+;; P1 set! 10_000 ;; same result as previous
+;;
+;; 3)
+;;
+;; P1 10 * 10 = 100\
+;; P2 10 * 10 * 10 = 1_000
+;; P2 set! 1_000
+;; P1 set! 100
+;;
+;; 4)
+;;
+;; P1 10 * 10 = 100
+;; P2 10 *
+;; P1 set! 100
+;; P2 10 * 100 * 100 = 100_000
+;; P2 set! 100_000
+;;
+;; 5)
+;;
+;; P1 10 * 10 = 100
+;; P2 10 * 10 * 10 = 1_000
+;; P1 set! 100
+;; P2 set! 1_000
+;;
+;; excercise 3.41
+;;
+;; Access to balance does not to be serialized. During concurrent exectution
+;; deposit and withdrawals can be interleaved with balance showing and it does
+;; not do any anomalous behavior -- the state of balance is just the way it is
+;; at given point of time, there is nothing more to it that can affect it during
+;; execution, reading value of variable is atomic.
+;;
+;; excercise 3.42
+;; http://community.schemewiki.org/?sicp-ex-3.42
+;;
+;; xdavidliu: Without further knowledge of how make-serial and parallel-execute
+;; actually work, it's hard to tell whether a serialized function can be
+;; interleaved *with itself*. If yes then for a modified version, there may be a
+;; data race and the avoce block of code can incorrectly retyrn 90 or 80. If
+;; not, then the modified version in this excercise works perfectly.
+;;
+;; A reasonable thing to say would be that since both arguments to
+;; parallel-execute were serialized using the same serializer (since they are
+;; actually the same *function*), we should expect them to not interleave with
+;; each other, and hence the modification *should* work.
+;;
+;; excercise 3.43
+;; TODO Drawing excercise
+;;
+;; excercise 3.44
+;;
+;; In exchange problem we need to stop-the-world state of two accounts balance
+;; so that the diffenrence is still valid before going for the swap (because in
+;; the meaintime value of balance acan change due to other exchange procedure).
+;;
+;; With transfer there is no such problem and no sophisticated synchronisation
+;; is needed.
+;;
+;; excercise 3.45
+;;
+;; Exchange procedure will again wrap deposit and withdraw procedures with the
+;; same serializers they are using. The nature of serializer is that at most one
+;; procedure can run at the time for given serializer. This means that when
+;; deposit or withdraw wrapped in exchange will start it will block the
+;; underlying procedure that was serialized in make-account function.
+;;
+;; excercise 3.46
+#lang sicp
+
+(define (clear! cell) (set-car! cell false))
+
+(define (test-and-set! cell)
+  (if (car cell)
+      true
+      (begin (set-car! cell true)
+             false)))
+
+(define (make-mutex)
+  (let ((cell (list false)))
+    (define (the-mutex m)
+      (cond ((eq? m 'acquire)
+             (if (test-and-set! cell)
+                 (the-mutex 'acquire))) ; retry
+            ((eq? m 'release) (clear! cell))))
+    the-mutex))
+
+;; excercise 3.46
+;;
+;; Both P1 and P2 acquire the mutex
+
+;; P1 (car cell) -> false
+;; P2 (car cell) -> false
+;; P1 (set-car! cell true) -> false
+;; P2 (set-car! cell true) -> false
+
+;; excercise 3.47
+;;
+;; 1)
+;;
+;; (define (make-semaphore n)
+;;   (let ((lock (make-mutex))
+;;         (count n)))
+;;   (define (the-semaphore m)
+;;     (define (aquire)
+;;       (lock 'acquire)
+;;       (cond ((= n 0)
+;;              (lock 'release)
+;;              (aquire))
+;;             (else
+;;              (set! n (- n 1))
+;;              (lock 'release))))
+;;     (define (release)
+;;       (lock 'release))
+;;     (cond ((eq? m 'acquire) (aquire))
+;;           ((eq? m 'release) (release)))))
+;;
+;; 2)
+;;
+;; (define (test-and-decrement! cell)
+;;   (if (= cell 0)
+;;       true
+;;       (begin
+;;         (set-car! cell (- (car cell) 1))
+;;         false)))
+;; (define (make-semaphore n)
+;;   (let ((cell (list n)))
+;;     (define (the-semaphore m)
+;;       (cond ((eq? m 'acquire)
+;;              (if (test-and-decrement! cell)
+;;                  (the-semaphore 'acquire)))
+;;             ((eq? m 'release) (clear! cell)))))
+;;   the-semaphore))
+
+;; excercise 3.48
+
+;; (define (serialized-exchange account1 account2)
+;;   (let ((serializer1 (account1 'serializer))
+;;         (serializer2 (account2 'serializer)))
+;;     ((serializer1 (serializer2 exchange))
+;;      account1
+;;      account2)))
+
+;; Since accounts needs to be accessed always in the same order
+;; regardless how they were passed to exchange function, the mutexes
+;; will acquired in order, not allowing one procudere to get past the
+;; point the deadlock can occur.
+;;
+;; (define (serialized-exchange account1 account2)
+;;   (define (run account1 account2)
+;;     (let ((serializer1 (account1 'serializer))
+;;           (serializer2 (account2 'serializer)))
+;;       ((serializer1 (serializer2 exchange))
+;;        account1
+;;        account2)))
+;;   (if (< (account1 'id) (account2 'id))
+;;       (run account1 account2)
+;;       (run account2 account1)))))
+;;
+;; excercise 3.49
+;;
+;; The deadlock can occur perhaps where ordering can not be determined
+;; or is nondeterministic or context-dependent. Eg. finding a next
+;; state given a previous state.
+
+;; 3.5 Streams
+
+(define (stream-ref s n)
+  (if (= n 0)
+      (stream-car s)
+      (stream-ref (stream-cdr s) (- n 1))))
+
+;; (define (stream-map proc s)
+;;   (if (stream-null? s)
+;;       the-empty-stream
+;;       (cons-stream
+;;        (proc (stream-car s))
+;;        (stream-map proc (stream-cdr s)))))
+
+(define (stream-for-each proc s)
+  (if (stream-null? s)
+      'done
+      (begin
+        (proc (stream-car s))
+        (stream-for-each proc
+                         (stream-cdr s)))))
+
+(define (display-stream s)
+  (stream-for-each display-line s))
+
+(define (display-line x)
+  (newline)
+  (display x))
+
+(define (stream-car stream)
+  (car stream))
+
+(define (stream-cdr stream)
+  (force (cdr stream)))
+
+(define (prime? n)
+  (define (loop x)
+    (cond ((< n (* x x)) true)
+          ((= 0 (modulo n x)) false)
+          (else (loop (inc x)))))
+  (cond ((= n 0) false)
+        ((= n 1) false)
+        (else (loop 2))))
+
+(define (enumerate-interval low high)
+  (if (> low high)
+      nil
+      (cons low
+            (enumerate-interval
+             (+ low 1)
+             high))))
+
+(define (map proc items)
+  (if (null? items)
+      nil
+      (cons (proc (car items))
+            (map proc (cdr items)))))
+
+(define (filter predicate sequence)
+  (cond ((null? sequence) nil)
+        ((predicate (car sequence))
+         (cons (car sequence)
+               (filter predicate
+                       (cdr sequence))))
+        (else  (filter predicate
+                       (cdr sequence)))))
+
+(define (stream-enumerate-interval low high)
+  (if (> low high)
+      the-empty-stream
+      (cons-stream
+       low
+       (stream-enumerate-interval (+ low 1)
+                                  high))))
+
+(define (stream-filter pred stream)
+  (cond ((stream-null? stream)
+         the-empty-stream)
+        ((pred (stream-car stream))
+         (cons-stream
+          (stream-car stream)
+          (stream-filter
+           pred
+           (stream-cdr stream))))
+        (else (stream-filter
+               pred
+               (stream-cdr stream)))))
+
+;; excercise 3.50
+
+(define (stream-map proc . argstreams)
+  (if (stream-null? (car argstreams))
+      the-empty-stream
+      (cons-stream
+       (apply proc (map stream-car argstreams))
+       (apply stream-map
+              (cons proc
+                    (map stream-cdr
+                         argstreams))))))
+
+;; excercise 3.51
+
+;; (define (show x)
+;;   (display-line x)
+;;   x)
+
+;; (define x
+;;   (stream-map show (stream-enumerate-interval 0 10)))
+
+;; (stream-ref x 5)
+
+;; =>
+;; 1
+;; 2
+;; 3
+;; 4
+;; 5
+
+;; (stream-ref x 7)
+
+;; =>
+;; 6
+;; 7
+
+;; Expression (stream-ref x 7) evaluates the stream again but because
+;; previous values are memoized, show function is not executed for
+;; prior stream values.
+
+;; excercise 3.52
+
+;; (define sum 0)
+
+;; (define (acum x)
+;;   (set! sum (+ x sum))
+;;   sum)
+
+;; (display sum)
+;; (newline)
+
+;; (define seq
+;;   (stream-map
+;;    acum
+;;    (stream-enumerate-interval 1 20)))
+
+;; (display sum)
+;; (newline)
+
+;; (define y (stream-filter even? seq))
+
+;; (display sum)
+;; (newline)
+
+;; (define z
+;;   (stream-filter
+;;    (lambda (x)
+;;      (= (remainder x 5) 0)) seq))
+
+;; (display sum)
+;; (newline)
+
+;; (stream-ref y 7) ;; => 136, sum => 210
+;; (display-stream z)
+;; =>
+;; 10
+;; 15
+;; 45
+;; 55
+;; 105
+;; 120
+;; 190
+;; 210
+;; sum => 210
+
+;; If memoization have not been used then with each traverse of seq
+;; the sum would get incremented.
+
+;; 3.5.2 Infinite Streams
+
+(define (integers-starting-from n)
+  (cons-stream
+   n (integers-starting-from (+ n 1))))
+(define integers (integers-starting-from 1))
+
+(define (take n s)
+  "List of n first elements of the stream s.
+   Useful for looking into the streams, not a part of SICP."
+  (if (= n 0)
+      nil
+      (cons (stream-car s)
+            (take (dec n) (stream-cdr s)))))
+
+(define (divisible? x y) (= (remainder x y) 0))
+(define no-sevens
+  (stream-filter (lambda (x)
+                   (not (divisible? x 7)))
+                 integers))
+
+(define (fibgen a b)
+  (cons-stream a (fibgen b (+ a b))))
+(define fibs (fibgen 0 1))
+
+(define (sieve stream)
+  (cons-stream
+   (stream-car stream)
+   (sieve (stream-filter
+           (lambda (x)
+             (not (divisible?
+                   x (stream-car stream))))
+           (stream-cdr stream)))))
+
+(define primes
+  (sieve (integers-starting-from 2)))
+
+(define ones (cons-stream 1 ones))
+
+(define (add-streams s1 s2)
+  (stream-map + s1 s2))
+
+;; (define integers
+;;   (cons-stream 1 (add-streams ones integers)))
+
+;; (define fibs
+;;   (cons-stream
+;;    0 (cons-stream
+;;       1 (add-streams
+;;          (stream-cdr fibs) fibs))))
+
+(define (scale-stream stream factor)
+  (stream-map
+   (lambda (x) (* x factor))
+   stream))
+
+(define double
+  (cons-stream 1 (scale-stream double 2)))
+
+;; Excercise 3.53
+
+;; i    1  2  4 ...
+;; i       =
+;; ii      1  2 ...
+;; i          =
+;; iii        1 ...
+;; i          +
+;; iii        1 ...
+;; i
+;; i
+;; i       +
+;; ii      1  2 ...
+;; i          =
+;; iii        1 ...
+;; i          +
+;; iii        1 ...
+(define s (cons-stream 1 (add-streams s s)))
+
+;; Excercise 3.54
+
+(define (mul-streams s1 s2)
+  (cons-stream (* (stream-car s1)
+                  (stream-car s2))
+               (mul-streams
+                (stream-cdr s1)
+                (stream-cdr s2))))
+
+(define factorials
+  (cons-stream 1 (mul-streams factorials (stream-cdr integers))))
+
+;; Excercise 3.55
+
+(define (partial-sums s)
+  (cons-stream
+   (stream-car s)
+   (add-streams (partial-sums s) (stream-cdr s))))
+
+;; Excercise 3.56
+
+(define (merge s1 s2)
+  (cond ((stream-null? s1) s2)
+        ((stream-null? s2) s1)
+        (else
+         (let ((s1car (stream-car s1))
+               (s2car (stream-car s2)))
+           (cond ((< s1car s2car)
+                  (cons-stream
+                   s1car
+                   (merge (stream-cdr s1)
+                          s2)))
+                 ((> s1car s2car)
+                  (cons-stream
+                   s2car
+                   (merge s1
+                          (stream-cdr s2))))
+                 (else
+                  (cons-stream
+                   s1car
+                   (merge
+                    (stream-cdr s1)
+                    (stream-cdr s2)))))))))
+
+(define S (cons-stream 1 (merge (scale-stream S 2) (merge (scale-stream S 3) (scale-stream S 5)))))
+
+;; Excercise 3.57
+
+;; Thanks to memoization, there for nth Fibonacci number there are
+;; required n additions. Without memoization stream would need to
+;; compute its elements recursively. For nth number we need n-1 and
+;; n-2, each one taking 2^n steps.
+
+;; Excercise 3.58
+
+(define (expand num den radix)
+  (cons-stream
+   (quotient (* num radix) den)
+   (expand (remainder (* num radix) den)
+           den
+           radix)))
+
+;; Expand computes fraction constructed from num and den in regard to
+;; the given radix.
+
+;; sicp.rkt> (take 10 (expand 1 7 10))
+;; (1 4 2 8 5 7 1 4 2 8)
+;; sicp.rkt> (take 10 (expand 3 8 10))
+;; (3 7 5 0 0 0 0 0 0 0)
+
+
+;; sicp.rkt> (/ 1.0 7)
+;; 0.14285714285714285
+;; sicp.rkt> (/ 3.0 8)
+;; 0.375
+
+;; Excercise 3.59
+
+(define (integrate-series s)
+  (stream-map * (stream-map / ones integers) s))
+
+(define (iterate x)
+  (cons-stream
+   x
+   (iterate x)))
+
+(define exp-series
+  (cons-stream
+   1 (integrate-series exp-series)))
+
+(define cosine-series
+  (cons-stream 1
+               (integrate-series (scale-stream sine-series -1))))
+
+(define sine-series
+  (cons-stream 0
+               (integrate-series cosine-series)))
+
+;; Excercise 3.60
+(define (reduce-stream initial op s)
+  (let ((r (op initial (stream-car s))))
+    (cons-stream
+     r
+     (reduce-stream r op (stream-cdr s)))))
+
+;; http://community.schemewiki.org/?sicp-ex-3.60
+(define (mul-series s1 s2)
+  (cons-stream (* (stream-car s1) (stream-car s2))
+               (add-streams (scale-stream (stream-cdr s2) (stream-car s1))
+                            (mul-series (stream-cdr s1) s2))))
+
+;; (take 10 (add-streams (mul-series-lucky cosine-series cosine-series)
+;;                       (mul-series-lucky sine-series sine-series)))
+
+
+;; 1 2 3 4 5
+;; 2 2 2 2 2
+
+;; 2 4 6 8 10 -> 2 6 12 20 30
+
+;; 1 2 3 4 5  -> 1 3 6 10 15
+;; 2 2 2 2 2  -> 2 4 6 8  10
+
+;;               2 12 36 80 150
+
+;; 1 2 3 4 5
+;; 2 2 2 2 2
+
+;; 2 6 12 20
+;; -----------
+;;   2 2 2 2
+
+;;   2 3 4 5
+;;   2 2 2 2 2
+
+;;   4 10 18
+;; -------------
+;;     4 4 4 4 4
+
+;;     3 4 5
+;;     2 2 2
+
+;;     6 14
+;;     ----------
+;;       6 6 6 6
+
+;;       4 5
+;;       2 2
+
+;;       8
+
+;; Excercise 3.61
+
+(define (invert-unit-series s)
+  (cons-stream
+   1
+   (scale-stream
+    (mul-series  (stream-cdr s) (invert-unit-series s))
+    - 1)))
+
+;; Excercise 3.62
+
+(define (div-series nom denom)
+  (if (= (stream-car denom) 0)
+      (error "DIVISION BY ZERO")
+      (mul-series nom (invert-unit-series denom))))
+
+(define tangent-series
+  (div-series sine-series cosine-series))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (average a b)
+  (/ (+ a b) 2.0))
+(define (sqrt-improve guess x)
+  (average guess (/ x guess)))
+
+(define (sqrt-stream x)
+  (define guesses
+    (cons-stream
+     1.0 (stream-map
+          (lambda (guess)
+            (sqrt-improve guess x))
+          guesses)))
+  guesses)
+
+;; (take 10 (sqrt-stream 2))
+
+(define (pi-summands n)
+  (cons-stream
+   (/ 1.0 n)
+   (stream-map - (pi-summands (+ n 2)))))
+
+(define pi-stream
+  (scale-stream
+   (partial-sums (pi-summands 1)) 4))
+
+(define (square x)
+  (* x x))
+
+(define (euler-transform s)
+  (let ((s0 (stream-ref s 0))
+        (s1 (stream-ref s 1))
+        (s2 (stream-ref s 2)))
+    (cons-stream
+     (- s2 (/ (square (- s2 s1))
+              (+ s0 (* -2 s1) s2)))
+     (euler-transform (stream-cdr s)))))
+
+;; (take 10 (euler-transform pi-stream))
+
+(define (make-tableau transform s)
+  (cons-stream
+   s
+   (make-tableau
+    transform
+    (transform s))))
+
+(define (accelerated-sequence transform s)
+  (stream-map stream-car
+              (make-tableau transform s)))
+
+;; (take 10 (accelerated-sequence euler-transform pi-stream))
+
+;; Excercise 3.61
+
+;; Luis version can not be memoized properly (sqrt-stream would call
+;; itself without using memo-proc, contrary, when guesses are returned
+;; then recursive call to sqrt-stream results in invoking memoized
+;; result of guesses is returned). If memoization wasn't used in delay
+;; there would be no difference.
+
+;; Excercise 3.64
+
+(define (stream-limit s tolerance)
+  (define (good-enough? a b)
+    (< (abs (- a b)) tolerance))
+  (define (compare s1 s2)
+    (let ((s1-car (stream-car s1))
+          (s2-car (stream-car s2)))
+      (if (good-enough? s1-car s2-car)
+          s2-car
+          (compare (stream-cdr s1) (stream-cdr s2)))))
+  (compare s (stream-cdr s)))
+
+(define (sqrt x tolerance)
+  (stream-limit (sqrt-stream x) tolerance))
+
+;; Excercise 3.65
+
+(define (ln2-summands n)
+  (cons-stream
+   (/ 1 n)
+   (stream-map - (ln2-summands (+ 1 n)))))
+
+(define ln2-series
+  (scale-stream (partial-sums (ln2-summands 1)) 1.0))
+
+(define (display-stream-limit s limit)
+  (cond ((= limit 0) 'done)
+        (else
+         (display (stream-car s))
+         (newline)
+         (display-stream-limit (stream-cdr s) (- limit 1)))))
+
+(define (stream-limit-display s tolerance)
+  (define (good-enough? a b)
+    (< (abs (- a b)) tolerance))
+  (define (compare s1 s2 counter)
+    (let ((s1-car (stream-car s1))
+          (s2-car (stream-car s2)))
+      (if (good-enough? s1-car s2-car)
+          (begin
+            (display counter)
+            (newline)
+            s2-car)
+          (compare (stream-cdr s1) (stream-cdr s2) (+ counter 1)))))
+  (compare s (stream-cdr s) 0))
+
+;; sicp.rkt> (stream-limit-display ln2-series 0.001)
+;; 998
+;; 0.6926474305598204
+;; sicp.rkt> (stream-limit-display ln2-series 0.0001) => does not end in reasonable time
+
+;; sicp.rkt> (stream-limit-display (euler-transform ln2-series) 0.0001)
+;; 11
+;; 0.6931879423258733
+
+;; sicp.rkt> (stream-limit-display (accelerated-sequence euler-transform ln2-series) 0.0001)
+;; 3
+;; 0.6931471960735491
+
+;; Infinite streams of pairs
+
+(define (interleave s1 s2)
+  (if (stream-null? s1)
+      s2
+      (cons-stream
+       (stream-car s1)
+       (interleave s2 (stream-cdr s1)))))
+
+(define (pairs s t)
+  (cons-stream
+   (list (stream-car s) (stream-car t))
+   (interleave
+    (stream-map (lambda (x)
+                  (list (stream-car s) x))
+                (stream-cdr t))
+    (pairs (stream-cdr s) (stream-cdr t)))))
+
+;; Excercise 3.66
+
+;; S(1,1) S(1, 2) S(1,3) S(1,4) S(1,5) S(1,6) S(1,7) S(1,8) S(1,9) S(1,10) -> 4 ahead of next one
+;;        S(2, 2) S(2,3) S(2,4) S(2,5) S(2,6) -> 2 ahead of next one
+;;                S(3,3) S(3,4) -> 0 ahead of next one
+;;                       S(4,4)
+;;                         |
+;;                         V
+;;  3 elems                n     10
+;;  2 elems                      5
+;;  1 elems                      2
+;;  0 elems                      1
+
+;; In general for (n, n) there will be n levels, starting from level
+;; with single elem (n, n) at the bottem and each next having twice as
+;; much elements as previous. So there would be around 2^n elems.
+;; PS. There would be exactly 2^n - 1 elements in such case.
+
+(define (count-to l s)
+  (define (same? l1 l2)
+    (and (= (car l1) (car l2)) (= (cadr l1) (cadr l2))))
+  (define (loop l s c)
+    (let ((head (stream-car s)))
+      (if (same? head l)
+          c
+          (loop l (stream-cdr s) (+ 1 c)))))
+  (loop l s 1))
+
+;; (count-to '(3 3) (pairs integers integers))
+;; (count-to '(4 4) (pairs integers integers))
+;; (count-to '(5 5) (pairs integers integers))
+
+;; (n, n): 2^n - 1
+;; (n, n + 1): (2^n - 1) + 2^(n - 1)
+;; (n, m): (2^n - 1) + 2^(n - 1) + (m - n - 1) * 2^n, where m > n
+
+;; Excercise 3.67
+
+(define (all-pairs s t)
+  (cons-stream
+   (list (stream-car s) (stream-car t))
+   (interleave
+    (interleave
+     (stream-map (lambda (x)
+                   (list (stream-car s) x))
+                 (stream-cdr t))
+     (stream-map (lambda (x)
+                   (list x (stream-car t)))
+                 (stream-cdr s)))
+    (all-pairs (stream-cdr s) (stream-cdr t)))))
+
+;; Excercise 3.68
+
+(define (louis-pairs s t)
+  (interleave
+   (stream-map
+    (lambda (x)
+      (list (stream-car s) x))
+    t)
+   (louis-pairs (stream-cdr s)
+          (stream-cdr t))))
+
+;; Luis implementation will recurse infinitely. The issue is that
+;; interleave function is ordinary function that is not delayed. It
+;; means that evaluating cdr of Lois implementation would not return
+;; *promise* but would cause inifinte recusion.
+
+;; Excercise 3.69
+
+(define (triples s t u)
+  (cons-stream
+   (list (stream-car s) (stream-car t) (stream-car u))
+   (interleave
+    (stream-map
+     (lambda (x)
+       (cons (stream-car s) x))
+     (stream-cdr (pairs t u)))
+    (triples (stream-cdr s) (stream-cdr t) (stream-cdr u)))))
+
+(define triples-integers
+ (triples integers integers integers))
+
+(define (pythagorean? a b c)
+  (= (square c)
+     (+ (square a) (square b))))
+
+(define pythagorean-triples
+  (stream-filter
+   (lambda (x)
+     (apply pythagorean? x))
+   triples-integers))
+
+;; Excercise 3.70
+
+(define (merge-weighted s1 s2 weight)
+  (cond ((stream-null? s1) s2)
+        ((stream-null? s2) s1)
+        (else
+         (let ((s1car (stream-car s1))
+               (s2car (stream-car s2)))
+           (cond ((< (weight s1car) (weight s2car))
+                  (cons-stream
+                   s1car
+                   (merge-weighted (stream-cdr s1) s2 weight)))
+                 (else
+                  (cons-stream
+                   s2car
+                   (merge-weighted s1 (stream-cdr s2) weight)))
+                 )))))
+
+
+(define (weighted-pairs s t w)
+  (cons-stream
+   (list (stream-car s) (stream-car t))
+   (merge-weighted
+    (stream-map
+     (lambda (x)
+       (list (stream-car s) x))
+     (stream-cdr t))
+    (weighted-pairs (stream-cdr s) (stream-cdr t) w)
+    w)))
+
+(define weighted-pairs-sum
+  (weighted-pairs integers integers (lambda (x) (apply + x))))
+
+  (define (not-divisible-2-3-5? x)
+    (cond ((= 0 (remainder x 2)) false)
+          ((= 0 (remainder x 3)) false)
+          ((= 0 (remainder x 5)) false)
+          (else true)))
+  (define (weight-2-3-5 x)
+    (let ((i (car x))
+          (j (cadr x)))
+      (+ (* 2 i) (* 3 j) (* 5 i j))))
+
+(define weighted-pairs-2-3-5
+  (weighted-pairs
+   (stream-filter not-divisible-2-3-5? integers)
+   (stream-filter not-divisible-2-3-5? integers)
+   weight-2-3-5))
+
+;; (take 10 weighted-pairs-2-3-5)
+
+;; Excercise 3.71
+
+(define (cube x)
+  (* x x x))
+(define (cube-sum x)
+  (let ((i (car x))
+        (j (cadr x)))
+    (+ (cube i) (cube j))))
+(define cube-pairs
+  (weighted-pairs integers integers cube-sum))
+
+
+(define (ramanujan)
+  (define (loop x s)
+    (cond ((= (cube-sum x) (cube-sum (stream-car s)))
+           (cons-stream
+            (list x (stream-car s) (cube-sum x))
+            (loop (stream-car s) (stream-cdr s))))
+          (else
+           (loop (stream-car s) (stream-cdr s)))))
+  (loop (stream-car cube-pairs) (stream-cdr cube-pairs)))
+
+;; (take 6 (ramanujan))
+
+;; Excercise 3.72
+
+(define (square-sum x)
+  (let ((i (car x))
+        (j (cadr x)))
+    (+ (square i) (square j))))
+
+(define square-sum-pairs
+  (weighted-pairs integers integers square-sum))
+
+(define (square-triples)
+  (define (loop x y s)
+    (cond ((= (square-sum x) (square-sum y) (square-sum (stream-car s)))
+           (cons-stream
+            (list x y (stream-car s) (square-sum x))
+            (loop y (stream-car s) (stream-cdr s))))
+          (else (loop y (stream-car s) (stream-cdr s)))))
+  (loop (stream-car square-sum-pairs) (stream-car (stream-cdr square-sum-pairs)) (stream-cdr (stream-cdr square-sum-pairs))))
+
+;; (take 5 (square-triples))
+
+;; Excercise 3.73 -- 3.80
+;; TODO
