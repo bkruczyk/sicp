@@ -2162,3 +2162,60 @@
 
 ;; Excercise 3.73 -- 3.80
 ;; TODO
+
+;; Excercise 3.81
+;; (define (random-numbers-generator requests)
+;;   (define (random-numbers seed)
+;;     (cons-stream seed
+;;                  (random-numbers (rand-update seed))))
+
+;;   (define (generate? request)
+;;     (eq? request 'generate))
+
+;;   (define (reset? request)
+;;     (and (pair? request) (eq? (car request) 'reset)))
+
+;;   (define (loop requests s)
+;;     (cond ((stream-null? requests) the-empty-stream)
+;;           ((generate? (stream-car requests))
+;;            (cons-stream (stream-car s)
+;;                         (loop (stream-cdr requests) (stream-cdr s))))
+;;           ((reset? (stream-car requests))
+;;            (let ((r (random-numbers (cadr (stream-car requests)))))
+;;              (cons-stream (stream-car r)
+;;                           (loop (stream-cdr requests) (stream-cdr r)))))))
+
+;;   (loop requests (random-numbers 705894)))
+
+;; (define requests
+;;   (cons-stream 'generate
+;;   (cons-stream 'generate
+;;   (cons-stream 'generate
+;;   (cons-stream '(reset 705894)
+;;   (cons-stream 'generate
+;;   (cons-stream 'generate
+;;                 the-empty-stream)))))))
+
+;; (display-stream (random-numbers-generator requests))
+
+;; ;; 705894
+;; ;; 1126542223
+;; ;; 1579310009
+;; ;; 705894
+;; ;; 1126542223
+;; ;; 1579310009
+;; ;; done
+
+;; Excercise 3.82
+(define (randoms-ranged low high)
+  (cons-stream (random-in-range low high)
+               (randoms-ranged low high)))
+
+(define (integral-estimates P x1 x2 y1 y2)
+  (define point-in-integral-stream
+    (stream-map P (randoms-ranged x1 x2) (randoms-ranged y1 y2)))
+  (monte-carlo point-in-integral-stream 0 0))
+
+(define pi-integral-estimates
+  (stream-map (lambda (area) (/ area (* 0.5 0.5)))
+              (integral-estimates in-unit-circle? 0.0 1.0 0.0 1.0)))
