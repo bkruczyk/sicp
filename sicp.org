@@ -1,3 +1,17 @@
 #+TITLE: Sicp
 
 2.58 not done correctly
+
+3.2 frame and env are synonymous (not really)
+frame is a place for bindings
+env contain chain of frames
+env is recursive structure, just like the list
+env has a pointer to enclosing env
+
+you can think of env as linked list and frames as elements
+linked list = (element : rest of linked list)
+env = (frame : enclosing env)
+
+ex 4.10 omitted
+ex 4.11 omitted
+ex 4.12 omitted
