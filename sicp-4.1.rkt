@@ -13,7 +13,7 @@
 ;;   (error "Not implemented yet: APPLY PRIMITIVE PROCEDURE"))
 ;; (define (procedure-body procedure)
 ;;   (error "Not implemented yet: PROCEDURE BODY"))
-;; (define (extend-environment parameters arguments environment)
+;; (define (tend-environment parameters arguments environment)
 ;;   (error "Not implemented yet: EXTEND ENVIRONMENT"))
 ;; (define (procedure-parameters procedure)
 ;;   (error "Not implemented yet: PROCEDURE PARAMETERS"))
@@ -302,7 +302,7 @@
 (define (let-body exp)
   (if (named-let? exp)
       (cadddr exp)
-      (caddr exp)))
+      (cddr exp)))
 
 (define (bindings->params bindings)
   (if (null? bindings)
@@ -329,8 +329,8 @@
       (named-let->combination exp)
       (cons (make-lambda
               (bindings->params (let-bindings exp))
-              (list (let-body exp)))
-             (bindings->args (let-bindings exp)))))
+              (let-body exp))
+            (bindings->args (let-bindings exp)))))
 
 (define (let*? exp)
   (tagged-list? exp 'let*))
@@ -370,7 +370,9 @@
   (eq? x false))
 
 (define (make-procedure parameters body env)
-  (list 'procedure parameters body env))
+  (list 'procedure parameters
+        (scan-out-defines body)
+        env))
 (define (compound-procedure? p)
   (tagged-list? p 'procedure))
 (define (procedure-parameters p) (cadr p))
@@ -407,7 +409,9 @@
              (env-loop
               (enclosing-environment env)))
             ((eq? var (car vars))
-             (car vals))
+             (if (eq? (car vals) '*unassigned*)
+                 (error "Unassigned variable" var)
+                 (car vals)))
             (else (scan (cdr vars)
                         (cdr vals)))))
     (if (eq? env the-empty-environment)
@@ -486,7 +490,10 @@
         (list 'cdr cdr)
         (list 'cons cons)
         (list 'null? null?)
-        (list '+ +)))
+        (list '+ +)
+        (list '- -)
+        (list '= =)
+        (list 'display display)))
 
 (define (primitive-procedure-names)
   (map car primitive-procedures))
@@ -538,3 +545,196 @@
       (user-print output)))
   (driver-loop))
 
+;; Excercise 4.16
+(define (internal-definitions procedure-body)
+  (if (not (pair? procedure-body)) nil
+      (let ((exp (car procedure-body)))
+        (cond ((definition? exp)
+               (cons exp (internal-definitions (cdr procedure-body))))
+              (else nil)))))
+(define (without-internal-definitions procedure-body)
+  (if (not (pair? procedure-body)) procedure-body
+      (let ((exp (car procedure-body)))
+        (cond ((definition? exp)
+               (without-internal-definitions (cdr procedure-body)))
+              (else exp)))))
+(define (into-unassigned-list internal-definitions)
+  (map (lambda (def) (list (cadr def) ''*unassigned*)) internal-definitions))
+(define (into-set-expressions internal-definitions)
+  (map (lambda (def)
+         (list 'set! (cadr def) (caddr def)))
+       internal-definitions))
+
+(define (scan-out-defines procedure-body)
+  (let ((definitions (internal-definitions procedure-body))
+        (body (without-internal-definitions procedure-body)))
+    (if (null? definitions) procedure-body
+        (list
+         (append
+          (list 'let
+                (into-unassigned-list definitions))
+          (append (into-set-expressions definitions)
+                  (list body)))))))
+(#%require racket/trace)
+
+;; Excercise 4.16
+;;
+;; Implemented scan-out-defines in make-procedure. As for why I don't see other
+;; benefit than the fact that with adding it do make-procedure you only need to
+;; scan out defines once, while with procedure-body scan-out-defines will be
+;; called each time when procedure is evaluated.
+
+;; Excercise 4.17, 4.18
+;;
+;; Good explanations on SICP Solutions Wiki.
+;;
+;; 4.18: One definition is dependant on the other so just using let (like in the
+;; excercise) will not work since dy won't be defined as variable at the time y
+;; will be evaluated. Contraray doing it like in the text will work.
+
+;; Excercise 4.19
+;;
+;; I would too prefer, just like Eva for definitions to be truly simultaneus. It
+;; seems that would require some mechanism to build a dependency tree for
+;; definitions so that they can be evaluated in order of dependecy. Of course
+;; there can also be mutual (cyclic) dependencies that would need to be solved,
+;; which makes whole solution not trivial.
+
+;; Excercise 4.20
+;; 1
+(define (letrec? exp)
+  (tagged-list? 'letrec exp))
+(define (letrec->let exp)
+  (define (unassigned-bindings exp)
+    (map (lambda (binding) (list (car binding) ''*unassigned*)) (let-bindings exp)))
+  (define (set-expressions exp)
+    (map (lambda (binding) (list 'set! (car binding) (cadr binding))) (let-bindings exp)))
+  (append
+   (list 'let (unassigned-bindings exp))
+   (set-expressions exp)
+   (let-body exp)))
+;; 2
+;;
+;; When let is expanded to lambda then lambda body will refer to symbol 'fact
+;; which will not be present in procedure environment because it is not defined
+;; yet, which will result in an error.
+
+;; Excercise 4.21
+;; 1
+;;
+;; ((lambda (n)
+;;    ((lambda (fact) (fact fact n))
+;;     (lambda (ft k)
+;;       (if (= k 1)
+;;           1
+;;           (* k (ft ft (- k 1)))))))
+;;  5)
+
+;; ((lambda (n)
+;;    ((lambda (fib) (fib fib n))
+;;     (lambda (fib k)
+;;       (if (< k 2)
+;;           1
+;;           (+ (fib fib (- k 1)) (fib fib (- k 2)))))))
+;;  5)
+;;
+;; 2
+;;
+;; (define (f x)
+;;   (define (even? n)
+;;     (if (= n 0)
+;;         true
+;;         (odd? (- n 1))))
+;;   (define (odd? n)
+;;     (if (= n 0)
+;;         false
+;;         (even? (- n 1))))
+;;   (even? x))
+
+(define (f x)
+  ((lambda (even? odd?)
+     (even? even? odd? x))
+   (lambda (ev? od? n)
+     (if (= n 0)
+         true
+         (od? od? ev? (- n 1))))
+   (lambda (ev? od? n)
+     (if (= n 0)
+         false
+         (ev? ev? od? (- n 1))))))
+
+;; Excercise 4.24
+
+(define (fib n)
+  (cond ((= n 1) 1)
+        ((= n 2) 1)
+        (else
+         (+ (fib (- n 1)) (fib (- n 2))))))
+(define test
+  '(begin
+     (define (fib n)
+       (cond ((= n 1) 1)
+             ((= n 2) 1)
+             (else
+              (+ (fib (- n 1)) (fib (- n 2))))))
+     (fib 30)))
+
+(define (timed f)
+  (let ((start (runtime)))
+    (display (f))
+    (newline)
+    (* (- (runtime) start) 0.001)))
+
+;; (timed (lambda () (fib 30)))
+;; (timed (lambda () (eval test the-global-environment)))
+
+;; baseline
+;; (timed (lambda () (fib 30)))
+;; 832040
+;; 34.729
+
+;; (timed (lambda () (eval test the-global-environment)))
+;; 832040
+;; 13154.645
+
+;; SICP 4.2
+
+(define (unless condition
+          usual-value
+          exceptional-value)
+  (if condition
+      exceptional-value
+      usual-value))
+
+;; Excercise 4.25
+
+(define (factorial n)
+  (unless (= n 1)
+    (* n (factorial (- n 1)))
+    1))
+
+;; If we attempt to evaluate `(factorial 5)` in ordinary Scheme, then we will
+;; end up in infinite loop. Since in applicative-order language first all
+;; arguments are evaluated, factorial function, after evaluating `unless`
+;; condition will continue with evaluating `(* n (factorial (- n 1)))` going
+;; into another loop cycle. Underlying `if` inside `unless` will never be called
+;; evaluated.
+;;
+;; In normal-order language such factorial implementation should not work for
+;; the same reason, but with the difference that recursive call will be
+;; infinitely expanded.
+
+;; Excercise 4.26
+;; `unless` as derived expression
+(define (unless-condition exp) (cadr exp))
+(define (unless-usual-value exp) (caddr exp))
+(define (unless-exceptional-value exp) (cadddr exp))
+(define (unless->if exp)
+  (make-if (unless-condition exp)
+           (unless-exceptional-value exp)
+           (unless-usual-value exp)))
+
+;; (define exp '(unless (= n 1)
+;;     (* n (factorial (- n 1)))
+;;     1))
+;; (unless->if exp)
