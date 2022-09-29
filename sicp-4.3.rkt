@@ -180,20 +180,21 @@
 ;;
 ;; "Naive" way, could be improved by adding checks between lambdas eg. (if (= fletcher cooper) (list)).
 
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+(define (flatmap proc seq)
+  (accumulate append nil (map proc seq)))
+(define (filter pred seq)
+  (if (null? seq)
+      seq
+      (if (pred (car seq))
+          (cons (car seq) (filter pred (cdr seq)))
+          (filter pred (cdr seq)))))
+
 (define (multiple-dwelling-ordinary-scheme)
-  (define (accumulate op initial sequence)
-    (if (null? sequence)
-        initial
-        (op (car sequence)
-            (accumulate op initial (cdr sequence)))))
-  (define (flatmap proc seq)
-    (accumulate append nil (map proc seq)))
-  (define (filter pred seq)
-    (if (null? seq)
-        seq
-        (if (pred (car seq))
-            (cons (car seq) (filter pred (cdr seq)))
-            (filter pred (cdr seq)))))
   (filter (lambda (seq) (not (null? seq)))
           (flatmap (lambda (fletcher)
                      (flatmap (lambda (cooper)
@@ -216,3 +217,84 @@
                                          (list 1 2 3 4)))
                               (list 2 3 4 5)))
                    (list 2 3 4))))
+
+;; Excercise 4.42
+;;
+;; Let's again write ordinary scheme procedure! We can produced all "legal"
+;; combinations from each girls sentences, assuming both are true.
+
+(define (complement solution)
+  (define (missing-item solution items)
+    (if (null? items)
+        (list)
+        (let ((item (car items))
+              (rest (cdr items)))
+          (if (member item solution)
+              (missing-item solution rest)
+              (list item)))))
+  (let ((name (missing-item solution (list 'kitty 'marry 'ethel 'joan 'betty)))
+        (score (missing-item solution (list 1 2 3 4 5))))
+    (append name score solution)))
+
+(define (deduplicate solution)
+  (define (loop solution new-solution)
+    (cond ((null? solution) new-solution)
+          ((symbol? (car solution))
+           (if (member (car solution) new-solution)
+               (loop (cddr solution) new-solution)
+               (loop
+                (cddr solution)
+                (cons (car solution) (cons (cadr solution) new-solution)))))))
+  (loop solution (list)))
+
+(define (parse solution)
+  (define (loop solution parsed)
+    (if (null? solution)
+        parsed
+        (loop
+         (cddr solution)
+         (let ((record (position-record parsed (car solution))))
+           (if (null? record)
+               (cons (list (car solution) (list (cadr solution))) parsed)
+               (merge-record parsed (car solution) (cadr solution))
+               )))))
+  (loop solution (list)))
+
+(define (position-record parsed name)
+  (if (null? parsed)
+      parsed
+      (if (eq? name (car (car parsed)))
+          (car parsed)
+          (position-record (cdr parsed) name))))
+
+(define (merge-record parsed name position)
+  (define (loop head current rest)
+    (if (null? current)
+        head
+        (if (eq? name (car current))
+            (append head (list name (merge-position (cadr current) position)) rest)
+            (if (null? rest)
+                (cons (list name (list position)) head)
+                (loop (cons current head) (car rest) (cdr rest))))))
+  (loop (list) (car parsed) (cdr parsed)))
+
+(define (merge-position positions new-position)
+  (if (member new-position positions)
+      positions
+      (cons new-position positions)))
+
+(define (liars-puzzle-all)
+  ;; (map complement)
+  ;; (map deduplicate)
+  ;; (filter (lambda (solution) (not (contradiction? solution))))
+  (flatmap (lambda (x)
+             (flatmap (lambda (y)
+                        (flatmap (lambda (a)
+                                   (flatmap (lambda (b)
+                                              (map (lambda (c)
+                                                     (append x y a b c))
+                                                   (list (list 'marry 4) (list 'betty 1))))
+                                            (list (list 'kitty 2) (list 'marry 4))))
+                                 (list (list 'joan 3) (list 'ethel 5))))
+                      (list  (list 'ethel 1) (list 'joan 2))))
+           (list (list 'kitty 2) (list 'betty 3))))
