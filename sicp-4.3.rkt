@@ -223,41 +223,13 @@
 ;; Let's again write ordinary scheme procedure! We can produced all "legal"
 ;; combinations from each girls sentences, assuming both are true.
 
-(define (complement solution)
-  (define (missing-item solution items)
-    (if (null? items)
-        (list)
-        (let ((item (car items))
-              (rest (cdr items)))
-          (if (member item solution)
-              (missing-item solution rest)
-              (list item)))))
-  (let ((name (missing-item solution (list 'kitty 'marry 'ethel 'joan 'betty)))
-        (score (missing-item solution (list 1 2 3 4 5))))
-    (append name score solution)))
-
-(define (deduplicate solution)
-  (define (loop solution new-solution)
-    (cond ((null? solution) new-solution)
-          ((symbol? (car solution))
-           (if (member (car solution) new-solution)
-               (loop (cddr solution) new-solution)
-               (loop
-                (cddr solution)
-                (cons (car solution) (cons (cadr solution) new-solution)))))))
-  (loop solution (list)))
-
 (define (parse solution)
   (define (loop solution parsed)
     (if (null? solution)
         parsed
         (loop
          (cddr solution)
-         (let ((record (position-record parsed (car solution))))
-           (if (null? record)
-               (cons (list (car solution) (list (cadr solution))) parsed)
-               (merge-record parsed (car solution) (cadr solution))
-               )))))
+         (merge-record parsed (car solution) (cadr solution)))))
   (loop solution (list)))
 
 (define (position-record parsed name)
@@ -269,14 +241,22 @@
 
 (define (merge-record parsed name position)
   (define (loop head current rest)
+    ;; (display head)
+    ;; (display " ")
+    ;; (display current)
+    ;; (display " ")
+    ;; (display rest)
+    ;; (newline)
     (if (null? current)
         head
         (if (eq? name (car current))
-            (append head (list name (merge-position (cadr current) position)) rest)
+            (append (cons (list name (merge-position (cadr current) position)) head) rest)
             (if (null? rest)
-                (cons (list name (list position)) head)
+                (cons (list name (list position)) (cons current head))
                 (loop (cons current head) (car rest) (cdr rest))))))
-  (loop (list) (car parsed) (cdr parsed)))
+  (if (null? parsed)
+      (cons (list name (list position)) parsed)
+      (loop (list) (car parsed) (cdr parsed))))
 
 (define (merge-position positions new-position)
   (if (member new-position positions)
@@ -298,3 +278,102 @@
                                  (list (list 'joan 3) (list 'ethel 5))))
                       (list  (list 'ethel 1) (list 'joan 2))))
            (list (list 'kitty 2) (list 'betty 3))))
+;; (#%require racket/trace)
+;; (trace parse)
+;; (trace merge-record)
+(define not-contradition-by-name? (lambda (parsed-solution) (null? (filter (lambda (record) (> (length (cadr record)) 1)) parsed-solution))))
+(define (not-contradiction-by-place? parsed-solution)
+  (define (loop parsed-solution taken-places)
+    (if (null? parsed-solution) true
+        (let ((record (car parsed-solution)))
+          (let ((name (car record))
+                (place (caadr record)))
+            (if (member place taken-places) false
+                (loop (cdr parsed-solution) (cons place taken-places)))))))
+  (loop parsed-solution (list)))
+
+;; (filter not-contradiction-by-place?
+;;         (filter not-contradition-by-name?
+;;                 (map parse (liars-puzzle-all))))
+
+;; there are two distinct solutions
+
+;; (((ethel (1)) (kitty (2)) (joan (3)) (marry (4)))
+;;  ((ethel (1)) (kitty (2)) (joan (3)) (marry (4)))
+;;  ((joan (2)) (betty (3)) (marry (4)) (ethel (5))))
+
+;; Excercise 4.43
+
+;; Information about which person owns what yacht gives information which father
+;; is not a father of which girl.
+
+;; (owns "sir barnacle" "gabrielle")
+;; (owns "mr. moore" "lorna")
+;; (owns "mr. hall" "rosalind")
+;; (owns "colonel downing" "melissa")
+;; (owns "dr. parker" "marry ann")
+
+;; (father "sir barnacle" "melissa")
+;; (father "mr. moor" "marry ann")
+;; (father "gabrielle father" "gabrielle")
+
+;; (owns "gabrielle father" "dr parker's daughter")
+;;
+;; hall or colonel is gabrielle father
+;; lorna or rosalins is dr parker daughter
+
+;; Gabrielle’s father owns the yacht that is named after Dr. Parker’s daughter
+;; owners of yachts lorna and rosalin are mr. moore and mr. hall
+;; gabreielle's father is either hall or colonel
+;; ---
+;; mr. hall is father of gabrielle
+;; dr. parkers is father of rosalinda
+;; father of lorna is colonel downing
+
+(define example-solution
+  (list
+   (list 'father "mr moore" 'yacht "lorna" 'daughter "marry anne")
+   (list 'father "dr parker" 'yacht "marry ann" 'daughter "rosalind")))
+
+(define (get-daughter record)
+  (cadr (cddddr record)))
+(define (get-father record)
+  (cadr record))
+(define (get-yacht record)
+  (cadddr record))
+
+(define (father-of daughter solution)
+  (define (test record)
+    (equal? daughter (get-daughter record)))
+  (map get-father (filter test solution)))
+
+(define (daughter-of father solution)
+  (define (test record)
+    (equal? father (get-father record)))
+  (map get-daughter (filter test solution)))
+
+(define (yacht-of father solution)
+  (define (test record)
+    (equal? father (get-father record)))
+  (map get-yacht (filter test solution)))
+
+(define (daughters-and-yachts)
+  (let ((barnacle (list 'father "sir barnacle" 'yacht "gabrielle"))
+        (moore (list 'father "mr moore" 'yacht "lorna"))
+        (hall (list 'father "mr hall" 'yacht "rosalind"))
+        (downing (list 'father "colonel downing" 'yacht "melissa"))
+        (parker (list 'father "dr parker" 'yacht "marry ann")))
+    (let ((barnacle-daughter "melissa")
+          (moore-daughter "marry ann")
+          (hall-daughter (amb "gabrielle" "lorna"))
+          (downing-daughter (amb "gabrielle" "lorna" "rosalind"))
+          (parker-daughter (amb "gabrielle" "lorna" "rosalind")))
+      (let ((solution
+             (list
+              (append barnacle-daughter barnacle)
+              (append moore-daughter moore)
+              (append hall-daughter hall)
+              (append downing-daughter downing)
+              (append parker-daughter parker)))))
+      (require (= (yacht-of (father-of "gabrielle" solution))
+                  (daughter-of "dr parker" solution))))))
