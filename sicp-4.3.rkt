@@ -374,6 +374,42 @@
               (append moore-daughter moore)
               (append hall-daughter hall)
               (append downing-daughter downing)
-              (append parker-daughter parker)))))
-      (require (= (yacht-of (father-of "gabrielle" solution))
-                  (daughter-of "dr parker" solution))))))
+              (append parker-daughter parker))))
+        (require (= (yacht-of (father-of "gabrielle" solution))
+                    (daughter-of "dr parker" solution)))))))
+
+;; Excercise 4.44
+(define example-board (list 1 2 3))
+
+(define (print-row board rownumber)
+  (define (loop queen-rows colnumber)
+    (cond ((<= colnumber (length board))
+           (if (equal? rownumber (car queen-rows))
+               (display "X ")
+               (display "O "))
+           (loop (cdr queen-rows) (+ 1 colnumber)))))
+  (loop board 1)
+  (newline))
+
+(define (print-board board)
+  (define (loop board rownumber)
+    (cond ((<= rownumber (length board))
+           (print-row board rownumber)
+           (loop board (+ 1 rownumber)))))
+  (loop board 1))
+
+(define the-empty-board (list))
+(define place-queen (queens)
+  (let ((board-size (+ (length queens) 1)))
+    (append
+     queens
+     (list (an-integer-between 1 (+ board-size 1))))))
+
+(define (legal-board? board) true)
+
+(define (queens board-size)
+  (if (= board-size 0)
+      the-empty-board
+      (let ((new-board (place-queen (queens (- board-size 1)))))
+        (require (legal-board? new-board))
+        new-board)))
